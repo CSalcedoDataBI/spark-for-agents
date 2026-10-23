@@ -25,15 +25,25 @@ import re
 import sys
 from pathlib import Path
 
-import pyspark
-from pyspark.sql import Column, DataFrame, SparkSession
-from pyspark.sql import functions as F
-
 ROOT = Path(__file__).resolve().parent.parent
-VERSION_DIRECTIVE = re.compile(r"\.\. (versionadded|versionchanged|deprecated)::\s*([0-9.]+)")
+# Sphinx directives. At column 0 (after getdoc dedents) they describe the member itself; indented
+# under a parameter they describe only that parameter, e.g. "Column as a parameter is deprecated".
+VERSION_DIRECTIVE = re.compile(r"^([ \t]*)\.\. (versionadded|versionchanged|deprecated)::\s*([0-9.]+)", re.M)
 
 
-def sql_functions(spark: SparkSession) -> list[dict]:
+def doc_versions(doc: str) -> tuple[dict, dict]:
+    """(member versions, parameter versions), each {directive: [version, ...]} without repeats."""
+    member: dict = {}
+    parameter: dict = {}
+    for indent, directive, version in VERSION_DIRECTIVE.findall(doc):
+        target = parameter if indent else member
+        versions = target.setdefault(directive, [])
+        if version not in versions:
+            versions.append(version)
+    return member, parameter
+
+
+def sql_functions(spark) -> list[dict]:
     jvm = spark._jvm
     registry = jvm.org.apache.spark.sql.catalyst.analysis.FunctionRegistry.builtin()
     identifier = jvm.org.apache.spark.sql.catalyst.FunctionIdentifier
@@ -70,13 +80,21 @@ def describe_member(owner: object, name: str) -> dict:
     except (TypeError, ValueError):
         signature = None
     doc = inspect.getdoc(target) or ""
-    versions = {}
-    for directive, version in VERSION_DIRECTIVE.findall(doc):
-        versions.setdefault(directive, []).append(version)
-    return {"name": name, "kind": kind, "signature": signature, "versions": versions, "doc": doc}
+    versions, parameter_versions = doc_versions(doc)
+    return {
+        "name": name,
+        "kind": kind,
+        "signature": signature,
+        "versions": versions,
+        "parameter_versions": parameter_versions,
+        "doc": doc,
+    }
 
 
 def pyspark_api() -> dict:
+    from pyspark.sql import Column, DataFrame
+    from pyspark.sql import functions as F
+
     functions = []
     for name in sorted(dir(F)):
         if name.startswith("_"):
@@ -97,6 +115,10 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--out", default=str(ROOT / "exports"))
     args = parser.parse_args()
+
+    # Imported here so the tests can load doc_versions without pyspark installed.
+    import pyspark
+    from pyspark.sql import SparkSession
 
     spark = (
         SparkSession.builder.master("local[1]")

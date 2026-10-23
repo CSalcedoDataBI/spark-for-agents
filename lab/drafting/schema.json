@@ -1,0 +1,21 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["notes"],
+  "properties": {
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["function", "trap", "example_sql", "expected"],
+        "properties": {
+          "function": { "type": "string" },
+          "trap": { "type": "string" },
+          "example_sql": { "type": "string" },
+          "expected": { "type": "string" }
+        }
+      }
+    }
+  }
+}

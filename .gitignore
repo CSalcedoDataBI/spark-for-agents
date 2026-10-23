@@ -26,3 +26,6 @@ __pycache__/
 # Agent harness: machine-local notes. The experto agent is part of the repo (NORTE R6).
 /.claude/*
 !/.claude/agents/
+
+# Drafting prompts are rebuilt from exports/ by lab/drafting/make_prompts.py
+/lab/drafting/prompts/
