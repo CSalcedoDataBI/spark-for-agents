@@ -25,6 +25,30 @@ Revisar lo que ya existe, para no duplicarlo: `etl:executing-spark`, `fabric-ski
 la referencia oficial de Spark y los repos públicos de skills de Spark. El hallazgo se anota en la
 épica.
 
+### 3.1 Hallazgo (2026-10-23)
+
+| Qué existe | Qué hace | ¿Da un catálogo de funciones exportado del motor? |
+|---|---|---|
+| `etl:executing-spark` (plugin `etl`) | Ejecuta código PySpark o Python en Fabric por la API de Livy, sin crear un notebook: ciclo de sesión, autenticación con `az`, qué funciona y qué no en esa sesión | No. Es **dónde correr** el código, no qué funciones existen |
+| `fabric-skills:spark-cli` | Despachador de modos para Spark en Fabric: escribir celdas de notebook, sesiones Livy, diagnóstico de corridas fallidas y ciclo de vida de las Materialized Lake Views | No. Cubre la **operación** en Fabric y la sintaxis propia de Fabric (MLV), no el catálogo de Spark |
+| `databricks/databricks-agent-skills` (367★, empuje 2026-10-23, licencia propia) | Skills de la plataforma Databricks: jobs, pipelines, Unity Catalog, streaming, consulta de documentación | No. Es la plataforma Databricks; la referencia sale de la documentación, no del motor |
+| `databricks-solutions/ai-dev-kit` (1965★, empuje 2026-10-23, licencia propia) | Kit de Field Engineering: SDK de Databricks y evaluaciones de skills | No |
+| `SemyonSinchenko/pyspark-mcp-server` (18★, empuje 2026-02-26, Apache-2.0) | Servidor MCP sobre una sesión de Spark viva: versión, plan de una consulta, esquemas, catálogos y tablas | No. Inspecciona **datos y planes** de una sesión, no las funciones disponibles. Útil como idea: la misma sesión que responde a esto puede correr la exportación |
+| `vgiri2015/ai-spark-mcp-server` (29★, último empuje 2025-12-05) | Servidor MCP que genera y optimiza código Spark con un LLM | No. Genera código desde la memoria del modelo, que es justo el problema |
+| `lakehq/sail` (3469★, Apache-2.0) | Motor compatible con Spark escrito en Rust | No es una referencia; sirve para recordar que «compatible con Spark» no implica el mismo catálogo |
+| Otros resultados de `gh search repos` («pyspark agent», «spark mcp server», «spark agent skills») | Agentes que traducen inglés o SQL a PySpark, y skills de NVIDIA DGX Spark (otro producto con el mismo nombre) | No |
+
+Búsquedas hechas: `spark claude skill`, `pyspark skill agent`, `pyspark mcp`,
+`spark sql functions json catalog`, `pyspark llm hallucination`, `spark agent skills`,
+`databricks skills claude`, `spark mcp server`, `pyspark agent`, `databricks agent skills`,
+`spark functions reference`, con `--sort=stars`.
+
+**Conclusión.** Nadie publica un catálogo de funciones de Spark SQL y PySpark **exportado del
+motor** y versionado para que un agente lo consulte. Las dos skills que ya están instaladas cubren
+la ejecución y la operación en Fabric, así que `spark-for-agents` no las duplica: las complementa, y
+sus fichas deben enlazarlas para «dónde correr esto» en vez de repetir su contenido. La exportación
+del §2 puede correr en Fabric por el mismo camino de Livy que documenta `etl:executing-spark`.
+
 ## 4. Piezas de la v0.1
 
 1. Script de exportación + JSON del catálogo (Spark SQL y PySpark) para una versión de Spark.
