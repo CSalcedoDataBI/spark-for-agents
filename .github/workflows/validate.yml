@@ -26,5 +26,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.x"
-      - name: Repo checks (skills frontmatter, workflow cost rules)
+      - name: Repo checks (skills frontmatter, workflow cost rules, names from the catalogue)
         run: python scripts/check_repo.py
+      - name: Tests of the repo checks
+        run: python -m unittest discover -s tests
