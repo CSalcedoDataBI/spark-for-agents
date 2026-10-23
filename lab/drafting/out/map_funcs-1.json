@@ -1,0 +1,67 @@
+{
+  "notes": [
+    {
+      "function": "element_at",
+      "trap": "`element_at(...)` on an array is 1-based, but the `arr[i]` subscript is 0-based, so the same number picks different elements. With ANSI off (the default), an index past the end returns NULL instead of raising an error, while index 0 always raises an error.",
+      "example_sql": "SELECT concat_ws(',', element_at(array('a','b','c'), 1), array('a','b','c')[1])",
+      "expected": "a,b",
+      "actual": "a,b",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "try_element_at",
+      "trap": "The try_ prefix does not cover every error: index 0 still raises an error. Only out-of-range indexes and missing map keys return NULL.",
+      "example_sql": "SELECT try_element_at(array(1, 2, 3), 0)",
+      "expected": "ERROR: INVALID_INDEX_OF_ZERO",
+      "actual": "ERROR: SparkRuntimeException INVALID_INDEX_OF_ZERO :: [INVALID_INDEX_OF_ZERO] The index 0 is invalid. An index shall be either < 0 or > 0 (the first element has index 1).",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "map",
+      "trap": "Duplicate keys do not use last-wins by default. With spark.sql.mapKeyDedupPolicy=EXCEPTION (the default), building a map with a repeated key raises an error, and so does a NULL key.",
+      "example_sql": "SELECT map(1, 'a', 1, 'b')",
+      "expected": "ERROR: DUPLICATED_MAP_KEY",
+      "actual": "ERROR: SparkRuntimeException DUPLICATED_MAP_KEY :: [DUPLICATED_MAP_KEY] Duplicate map key 1 was found, please check the input data. If you want to remove the duplicated keys, you can set \"spark.sql.mapKeyDedupPolicy\" to \"LAST_WIN\" so that the key inserted at last takes precedence.",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "map_concat",
+      "trap": "If any argument is a NULL map, the whole result is NULL; NULL maps are not skipped. A key that appears in more than one input map raises an error under the default dedup policy instead of keeping the last value.",
+      "example_sql": "SELECT map_concat(map(1, 'a'), CAST(NULL AS MAP<INT, STRING>))",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "map_from_arrays",
+      "trap": "A NULL element in the keys array raises an error rather than being dropped. Duplicate keys also raise an error under the default dedup policy.",
+      "example_sql": "SELECT map_from_arrays(array(1, NULL), array('a', 'b'))",
+      "expected": "ERROR: NULL_MAP_KEY",
+      "actual": "ERROR: SparkRuntimeException NULL_MAP_KEY :: [NULL_MAP_KEY] Cannot use null as map key.",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "map_from_entries",
+      "trap": "If the input array contains a NULL struct entry, the whole result is NULL; the NULL entry is not skipped.",
+      "example_sql": "SELECT map_from_entries(array(struct(1, 'a'), NULL))",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "str_to_map",
+      "trap": "Both delimiters are regular expressions, so regex metacharacters such as '|' or '.' must be escaped or wrapped in a character class. All values come back as STRING, and a pair with no key/value delimiter gets a NULL value.",
+      "example_sql": "SELECT element_at(str_to_map('a|1,b|2', ',', '[|]'), 'b')",
+      "expected": "2",
+      "actual": "2",
+      "verified": true,
+      "in_part": true
+    }
+  ]
+}

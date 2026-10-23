@@ -1,0 +1,67 @@
+{
+  "notes": [
+    {
+      "function": "coalesce",
+      "trap": "`coalesce(...)` only skips SQL NULL. A floating-point NaN counts as a real value, so it is returned as is. Use `nanvl(...)` to replace NaN.",
+      "example_sql": "SELECT coalesce(CAST('NaN' AS DOUBLE), 0.0)",
+      "expected": "NaN",
+      "actual": "NaN",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "if",
+      "trap": "A NULL condition is not an error and is not propagated as NULL. It is treated as not true, so the third argument (the else branch) is returned.",
+      "example_sql": "SELECT if(CAST(NULL AS BOOLEAN), 'yes', 'no')",
+      "expected": "no",
+      "actual": "no",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "nanvl",
+      "trap": "`nanvl(...)` replaces only NaN, not NULL. A NULL first argument gives NULL rather than the fallback, unlike `nvl(...)` or `coalesce(...)`.",
+      "example_sql": "SELECT nanvl(CAST(NULL AS DOUBLE), 123)",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "nullif",
+      "trap": "The equality test uses implicit type coercion, so a string and a number can compare equal. With ANSI off, the string is cast to the numeric type and the result becomes NULL.",
+      "example_sql": "SELECT nullif('1', 1)",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "nvl",
+      "trap": "`nvl(...)` is rewritten to `coalesce(...)`, so both arguments are coerced to a common type. Mixing a number with a string literal silently makes the result a STRING, even when the first value is used.",
+      "example_sql": "SELECT typeof(nvl(1, 'a'))",
+      "expected": "string",
+      "actual": "string",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "nvl2",
+      "trap": "`nvl2(...)` tests only whether expr1 is NULL. It never returns expr1, and a non-NULL falsy value such as 0 or false still selects expr2.",
+      "example_sql": "SELECT nvl2(0, 'not null', 'null')",
+      "expected": "not null",
+      "actual": "not null",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "when",
+      "trap": "In the simple form CASE x WHEN NULL, the match is tested with =, so it never matches, even when x is NULL. Use the searched form CASE WHEN x IS NULL instead.",
+      "example_sql": "SELECT CASE CAST(NULL AS INT) WHEN NULL THEN 'matched' ELSE 'no match' END",
+      "expected": "no match",
+      "actual": "no match",
+      "verified": true,
+      "in_part": true
+    }
+  ]
+}

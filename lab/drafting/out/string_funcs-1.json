@@ -1,0 +1,157 @@
+{
+  "notes": [
+    {
+      "function": "ascii",
+      "trap": "An empty string returns 0, not NULL, so you cannot use `ascii(...)` to tell an empty string apart from a string that starts with the NUL character.",
+      "example_sql": "SELECT ascii('')",
+      "expected": "0",
+      "actual": "0",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "bit_length",
+      "trap": "The count is based on the UTF-8 encoded bytes, not on characters. Any non-ASCII character adds 16 or more bits instead of 8.",
+      "example_sql": "SELECT bit_length('é')",
+      "expected": "16",
+      "actual": "16",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "btrim",
+      "trap": "The second argument is a set of characters, not a substring. Any mix of those characters is stripped from both ends.",
+      "example_sql": "SELECT btrim('xyxSparkyx', 'xy')",
+      "expected": "Spark",
+      "actual": "Spark",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "char",
+      "trap": "Only the low 8 bits of the argument are used (n & 255), so values above 255 silently wrap around instead of producing a Unicode code point or an error.",
+      "example_sql": "SELECT char(321)",
+      "expected": "A",
+      "actual": "A",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "chr",
+      "trap": "A negative argument returns an empty string, not NULL and not an error.",
+      "example_sql": "SELECT length(chr(-65))",
+      "expected": "0",
+      "actual": "0",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "char_length",
+      "trap": "For BINARY input it counts bytes, not characters. Wrapping a string in `encode(...)` therefore changes the result for non-ASCII text, and the result then matches `octet_length(...)`.",
+      "example_sql": "SELECT char_length(encode('é', 'utf-8'))",
+      "expected": "2",
+      "actual": "2",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "len",
+      "trap": "Numeric arguments are implicitly cast to STRING before measuring. A double such as 1E3 becomes '1000.0', so you get the length of its string form, not the number of digits.",
+      "example_sql": "SELECT len(1E3)",
+      "expected": "6",
+      "actual": "6",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "concat_ws",
+      "trap": "NULL arguments and NULL array elements are skipped, unlike `concat(...)` which returns NULL. Empty strings are not skipped, so they still produce consecutive separators.",
+      "example_sql": "SELECT concat_ws('-', 'a', '', NULL, 'b')",
+      "expected": "a--b",
+      "actual": "a--b",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "contains",
+      "trap": "The match is case-sensitive, and an empty search string always returns true.",
+      "example_sql": "SELECT contains('Spark', '')",
+      "expected": "true",
+      "actual": "true",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "decode",
+      "trap": "In the search/result form, NULL matches a NULL search value, unlike CASE x WHEN NULL. With exactly two arguments it is a different function entirely: it decodes bytes using a charset.",
+      "example_sql": "SELECT decode(CAST(NULL AS INT), 1, 'one', NULL, 'none')",
+      "expected": "none",
+      "actual": "none",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "elt",
+      "trap": "With ANSI mode off (the default), an index of 0, a negative index or an index past the end returns NULL silently instead of raising an error. Indexes are 1-based.",
+      "example_sql": "SELECT elt(0, 'a', 'b')",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "encode",
+      "trap": "The 'utf-16' charset produces a big-endian byte order mark (FEFF) before the data. Use 'UTF-16BE' or 'UTF-16LE' if you need the bytes without a BOM.",
+      "example_sql": "SELECT hex(encode('é', 'utf-16'))",
+      "expected": "FEFF00E9",
+      "actual": "FEFF00E9",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "find_in_set",
+      "trap": "List items are not trimmed, so a space after a comma becomes part of the item. A missing match returns 0, not NULL.",
+      "example_sql": "SELECT find_in_set('b', 'a, b')",
+      "expected": "0",
+      "actual": "0",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "format_number",
+      "trap": "It returns a STRING with thousands separators, not a rounded number, so the result cannot be used directly in arithmetic or numeric sorting. Use `round(...)` when you need a numeric value.",
+      "example_sql": "SELECT format_number(1234567.891, 0)",
+      "expected": "1,234,568",
+      "actual": "1,234,568",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "format_string",
+      "trap": "NULL arguments do not make the result NULL. They are formatted as the literal text 'null'.",
+      "example_sql": "SELECT format_string('x=%s', CAST(NULL AS STRING))",
+      "expected": "x=null",
+      "actual": "x=null",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "initcap",
+      "trap": "Only spaces start a new word. Letters after hyphens, underscores or apostrophes stay lowercase, and all other letters are forced to lowercase.",
+      "example_sql": "SELECT initcap('hello-world foo_bar')",
+      "expected": "Hello-world Foo_bar",
+      "actual": "Hello-world Foo_bar",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "instr",
+      "trap": "The match is case-sensitive and returns 0, not NULL, when the substring is not found. The argument order is (str, substr), which is the reverse of `locate(...)`.",
+      "example_sql": "SELECT instr('SparkSQL', 'sql')",
+      "expected": "0",
+      "actual": "0",
+      "verified": true,
+      "in_part": true
+    }
+  ]
+}

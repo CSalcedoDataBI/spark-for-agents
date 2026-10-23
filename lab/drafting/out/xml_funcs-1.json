@@ -1,0 +1,76 @@
+{
+  "notes": [
+    {
+      "function": "xpath",
+      "trap": "`xpath(...)` returns each matched node's node value, which is NULL for element nodes. A path such as 'a/b' therefore gives an array of NULLs, not the element texts. Add `/text()` to the path to get the strings.",
+      "example_sql": "SELECT xpath('<a><b>b1</b><b>b2</b></a>', 'a/b')",
+      "expected": "[null, null]",
+      "actual": "[null, null]",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "xpath_string",
+      "trap": "When nothing matches, `xpath_string(...)` returns an empty string, not NULL. A NULL check will not detect a missing node.",
+      "example_sql": "SELECT xpath_string('<a><b>1</b></a>', 'a/c') = ''",
+      "expected": "true",
+      "actual": "true",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "xpath_boolean",
+      "trap": "A path that selects nodes is true whenever at least one node matches, whatever the node's content. So an element whose text is '0' or 'false' still gives true. Compare the value explicitly, for example 'a/b = 1', to test the content.",
+      "example_sql": "SELECT xpath_boolean('<a><b>0</b></a>', 'a/b')",
+      "expected": "true",
+      "actual": "true",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "xpath_int",
+      "trap": "The XPath result is evaluated as a double and narrowed to int. Fractions are truncated, not rounded, and non-numeric text silently becomes 0 rather than NULL or an error.",
+      "example_sql": "SELECT xpath_int('<a><b>2.9</b></a>', 'a/b')",
+      "expected": "2",
+      "actual": "2",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "xpath_long",
+      "trap": "When a plain path matches several nodes, only the first node is converted to a number. The values are not summed or aggregated, so use 'sum(...)' inside the XPath to add them.",
+      "example_sql": "SELECT xpath_long('<a><b>1</b><b>2</b></a>', 'a/b')",
+      "expected": "1",
+      "actual": "1",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "xpath_short",
+      "trap": "The double result is narrowed to a Java short without any overflow check. Values outside -32768..32767 silently wrap around instead of returning NULL or an error.",
+      "example_sql": "SELECT xpath_short('<a><b>40000</b></a>', 'a/b')",
+      "expected": "-25536",
+      "actual": "-25536",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "xpath_double",
+      "trap": "Non-numeric text yields NaN, not NULL. NaN then behaves unexpectedly in comparisons and aggregates, and a NULL check will not detect it.",
+      "example_sql": "SELECT xpath_double('<a><b>abc</b></a>', 'a/b')",
+      "expected": "NaN",
+      "actual": "NaN",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "xpath_number",
+      "trap": "Inside the XPath, 'sum(...)' over nodes where any value is non-numeric returns NaN for the whole result. It does not skip the bad values the way the SQL `sum(...)` aggregate ignores NULLs.",
+      "example_sql": "SELECT xpath_number('<a><b>1</b><b>x</b></a>', 'sum(a/b)')",
+      "expected": "NaN",
+      "actual": "NaN",
+      "verified": true,
+      "in_part": true
+    }
+  ]
+}

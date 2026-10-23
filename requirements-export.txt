@@ -1,0 +1,3 @@
+# The engine the catalogue is exported from. Changing this pin is a new export (exports/spark-<v>/).
+# 3.5 is the Spark line of the current GA Fabric runtime (1.3).
+pyspark==3.5.9

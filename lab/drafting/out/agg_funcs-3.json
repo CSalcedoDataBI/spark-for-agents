@@ -1,0 +1,130 @@
+{
+  "notes": [
+    {
+      "function": "regr_slope",
+      "trap": "The argument order is (y, x): the dependent variable comes first and the independent variable second. Swapping them silently returns the slope of the inverse regression, with no error.",
+      "example_sql": "SELECT regr_slope(x, y) FROM VALUES (0, 0), (2, 1) AS tab(y, x)",
+      "expected": "0.5",
+      "actual": "0.5",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "regr_intercept",
+      "trap": "If every non-null x is the same (zero variance), the intercept is undefined and the function returns NULL rather than an error or a number.",
+      "example_sql": "SELECT regr_intercept(y, x) FROM VALUES (1, 5), (3, 5) AS tab(y, x)",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "regr_r2",
+      "trap": "When x has zero variance the result is NULL. When y has zero variance but x does not, the result is 1.0 rather than NULL or NaN.",
+      "example_sql": "SELECT regr_r2(y, x) FROM VALUES (7, 1), (7, 2), (7, 3) AS tab(y, x)",
+      "expected": "1.0",
+      "actual": "1.0",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "regr_sxx",
+      "trap": "Only rows where both y and x are non-null are used. A row with a valid x but a NULL y is dropped, so the result can differ from computing over the x column alone, for example with `var_pop(...)`.",
+      "example_sql": "SELECT regr_sxx(y, x) FROM VALUES (NULL, 10), (1, 2), (2, 4) AS tab(y, x)",
+      "expected": "2.0",
+      "actual": "2.0",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "skewness",
+      "trap": "If all values are identical (zero variance), Spark 3.x returns NULL, not NaN or 0. The NaN behaviour applies only with the legacy statisticalAggregate flag.",
+      "example_sql": "SELECT skewness(col) FROM VALUES (5), (5), (5) AS tab(col)",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "some",
+      "trap": "`some(...)` is an aggregate alias of `bool_or(...)`. If every input is NULL, or the group is empty, it returns NULL rather than false.",
+      "example_sql": "SELECT some(col) FROM VALUES (CAST(NULL AS BOOLEAN)), (CAST(NULL AS BOOLEAN)) AS tab(col)",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "std",
+      "trap": "In Spark, `std(...)` is the sample standard deviation (n-1). This differs from MySQL, where STD() is the population standard deviation.",
+      "example_sql": "SELECT std(col) FROM VALUES (1), (3) AS tab(col)",
+      "expected": "1.4142135623730951",
+      "actual": "1.4142135623730951",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "stddev",
+      "trap": "`stddev(...)` is the sample standard deviation, so a group with a single non-null value returns NULL, not 0.0 and not NaN.",
+      "example_sql": "SELECT stddev(col) FROM VALUES (5) AS tab(col)",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "stddev_pop",
+      "trap": "Unlike `stddev_samp(...)`, which returns NULL for a single row, `stddev_pop(...)` returns 0.0 for a one-row group.",
+      "example_sql": "SELECT stddev_pop(col) FROM VALUES (5) AS tab(col)",
+      "expected": "0.0",
+      "actual": "0.0",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "sum",
+      "trap": "With ANSI mode off (the default), summing BIGINT values silently wraps around on overflow instead of raising an error or returning NULL. Use `try_sum(...)` to get NULL instead.",
+      "example_sql": "SELECT sum(col) FROM VALUES (9223372036854775807L), (1L) AS tab(col)",
+      "expected": "-9223372036854775808",
+      "actual": "-9223372036854775808",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "try_avg",
+      "trap": "For integral inputs the average is accumulated as DOUBLE. Values near the BIGINT limit therefore do not overflow to NULL; you get a rounded double result.",
+      "example_sql": "SELECT try_avg(col) FROM VALUES (9223372036854775807L), (1L) AS tab(col)",
+      "expected": "4.611686018427388E18",
+      "actual": "4.611686018427388E18",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "try_sum",
+      "trap": "The NULL-on-overflow behaviour applies only to integral, decimal and interval sums. A DOUBLE sum that overflows returns Infinity, not NULL.",
+      "example_sql": "SELECT try_sum(col) FROM VALUES (1.0E308D), (1.0E308D) AS tab(col)",
+      "expected": "Infinity",
+      "actual": "Infinity",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "variance",
+      "trap": "`variance(...)` is the sample variance (n-1), the same as `var_samp(...)`. This differs from MySQL, where VARIANCE() is the population variance; use `var_pop(...)` for that.",
+      "example_sql": "SELECT variance(col) FROM VALUES (1), (3) AS tab(col)",
+      "expected": "2.0",
+      "actual": "2.0",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "var_samp",
+      "trap": "A group with only one non-null value returns NULL, because n-1 = 0, rather than 0.0 or NaN. `var_pop(...)` returns 0.0 for the same input.",
+      "example_sql": "SELECT var_samp(col) FROM VALUES (5) AS tab(col)",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    }
+  ]
+}

@@ -1,0 +1,139 @@
+{
+  "notes": [
+    {
+      "function": "first",
+      "trap": "NULLs are not skipped by default, so a leading NULL row is returned as the result. Without an ORDER BY, the 'first' row depends on physical row order, which can change after a shuffle. Pass `true` as the second argument to skip NULLs.",
+      "example_sql": "SELECT first(col) FROM VALUES (NULL), (5), (20) AS tab(col)",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "first_value",
+      "trap": "As an aggregate it is the same as `first(...)`: NULLs count as values unless the second argument is `true`. It is not an ordered 'minimum'; the result follows physical row order.",
+      "example_sql": "SELECT first_value(col, true) FROM VALUES (NULL), (5), (20) AS tab(col)",
+      "expected": "5",
+      "actual": "5",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "last",
+      "trap": "A trailing NULL is returned as the last value unless `isIgnoreNull` is `true`. The row order is not guaranteed after a shuffle, so this is not a substitute for `max_by(...)` with an explicit ordering column.",
+      "example_sql": "SELECT last(col) FROM VALUES (10), (5), (NULL) AS tab(col)",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "grouping_id",
+      "trap": "The first listed column is the most significant bit, and a bit is 1 when that column is aggregated away (rolled up). In the grouping set (b) with columns (a, b), the result is 2, not 1. The result type is BIGINT.",
+      "example_sql": "SELECT g FROM (SELECT grouping(a) AS ga, grouping_id(a, b) AS g FROM VALUES (1, 2) AS t(a, b) GROUP BY GROUPING SETS ((a, b), (b))) WHERE ga = 1",
+      "expected": "2",
+      "actual": "2",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "kurtosis",
+      "trap": "Spark returns population excess kurtosis (the value minus 3), not raw kurtosis or the sample-adjusted estimate other tools use, so results can be negative. A constant group (zero variance) returns NULL rather than NaN.",
+      "example_sql": "SELECT kurtosis(col) FROM VALUES (1), (2) AS tab(col)",
+      "expected": "-2.0",
+      "actual": "-2.0",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "max",
+      "trap": "On strings, max compares lexicographically, not numerically, so '9' beats '10'. Cast to a numeric type first if the strings hold numbers.",
+      "example_sql": "SELECT max(col) FROM VALUES ('10'), ('9') AS tab(col)",
+      "expected": "9",
+      "actual": "9",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "max_by",
+      "trap": "Rows whose ordering value `y` is NULL are ignored, but a NULL `x` on the row with the maximum `y` is still returned as NULL. On ties in `y`, the chosen `x` is non-deterministic.",
+      "example_sql": "SELECT max_by(x, y) FROM VALUES (CAST(NULL AS STRING), 50), ('a', 10) AS tab(x, y)",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "min_by",
+      "trap": "Rows with a NULL ordering value are skipped entirely; NULL is not treated as the smallest value the way ORDER BY ... NULLS FIRST would sort it.",
+      "example_sql": "SELECT min_by(x, y) FROM VALUES ('a', CAST(NULL AS INT)), ('b', 5) AS tab(x, y)",
+      "expected": "b",
+      "actual": "b",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "mean",
+      "trap": "For DECIMAL input, the result is a DECIMAL with scale increased by 4 (precision + 4, scale + 4), not a DOUBLE, so extra trailing zeros appear. Integer input returns DOUBLE, so there is no integer truncation.",
+      "example_sql": "SELECT mean(col) FROM VALUES (1.0), (2.0) AS tab(col)",
+      "expected": "1.50000",
+      "actual": "1.50000",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "median",
+      "trap": "median interpolates between the two middle values and returns DOUBLE even for integer input. Use `percentile_approx(...)` if you need an actual element of the data.",
+      "example_sql": "SELECT median(col) FROM VALUES (1), (2), (3), (4) AS tab(col)",
+      "expected": "2.5",
+      "actual": "2.5",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "percentile",
+      "trap": "percentile is exact and linearly interpolates, returning DOUBLE for numeric input. `percentile_approx(...)` instead returns an actual input value of the input type, so the two disagree on even-sized groups.",
+      "example_sql": "SELECT percentile(col, 0.5) FROM VALUES (1), (2), (3), (4) AS tab(col)",
+      "expected": "2.5",
+      "actual": "2.5",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "percentile_approx",
+      "trap": "It never interpolates: it returns an actual input value (the lower middle value for 0.5 on an even count), keeping the input type. The result is 2 here, not 2.5 as `median(...)` or `percentile(...)` would return.",
+      "example_sql": "SELECT percentile_approx(col, 0.5) FROM VALUES (1), (2), (3), (4) AS tab(col)",
+      "expected": "2",
+      "actual": "2",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "regr_avgx",
+      "trap": "The argument order is (y, x), dependent variable first, so regr_avgx averages the second argument. Rows where either argument is NULL are excluded.",
+      "example_sql": "SELECT regr_avgx(y, x) FROM VALUES (1, 10), (2, 20), (NULL, 90) AS tab(y, x)",
+      "expected": "15.0",
+      "actual": "15.0",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "regr_avgy",
+      "trap": "It averages the first argument (y), but only over rows where x is also non-NULL. The result can differ from `avg(...)` of y.",
+      "example_sql": "SELECT regr_avgy(y, x) FROM VALUES (1, 2), (2, NULL), (2, 3), (2, 4) AS tab(y, x)",
+      "expected": "1.6666666666666667",
+      "actual": "1.6666666666666667",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "regr_count",
+      "trap": "It counts only rows where both y and x are non-NULL. This is not the same as `count(...)` of either column.",
+      "example_sql": "SELECT regr_count(y, x) FROM VALUES (1, 2), (2, NULL), (NULL, 3), (2, 4) AS tab(y, x)",
+      "expected": "2",
+      "actual": "2",
+      "verified": true,
+      "in_part": true
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "notes": [
+    {
+      "function": "size",
+      "trap": "With default settings (ANSI off, `spark.sql.legacy.sizeOfNull`=true), `size(...)` returns -1 for a NULL array or map, not NULL. Filters such as `size(col) > 0` still exclude NULLs, but `size(col) < 1` or sums of sizes silently include the -1.",
+      "example_sql": "SELECT size(CAST(NULL AS MAP<STRING,INT>))",
+      "expected": "-1",
+      "actual": "-1",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "cardinality",
+      "trap": "`cardinality(...)` is an alias of `size(...)`, not of `array_size(...)`. With default settings it returns -1 for NULL input, unlike the standard SQL / Trino behaviour of returning NULL.",
+      "example_sql": "SELECT cardinality(CAST(NULL AS ARRAY<INT>))",
+      "expected": "-1",
+      "actual": "-1",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "array_size",
+      "trap": "Unlike `size(...)` and `cardinality(...)`, `array_size(...)` returns NULL for NULL input regardless of `spark.sql.legacy.sizeOfNull`. It only accepts arrays, not maps, so swapping it in for `size(...)` changes both results and accepted types.",
+      "example_sql": "SELECT array_size(CAST(NULL AS ARRAY<INT>))",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "concat",
+      "trap": "`concat(...)` returns NULL if any argument is NULL, for both strings and arrays. It does not skip NULLs or treat them as empty the way `concat_ws(...)` does. Wrap nullable inputs in `coalesce(...)` to keep the other parts.",
+      "example_sql": "SELECT concat('a', NULL, 'b')",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "reverse",
+      "trap": "`reverse(...)` accepts a string or an array. With ANSI off, a numeric argument is implicitly cast to STRING and reversed character by character, so a trailing zero becomes a leading zero in a string result instead of raising an error.",
+      "example_sql": "SELECT reverse(120)",
+      "expected": "021",
+      "actual": "021",
+      "verified": true,
+      "in_part": true
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "notes": [
+    {
+      "function": "sha2",
+      "trap": "An unsupported bitLength (anything other than 0, 224, 256, 384 or 512) returns NULL instead of raising an error, even with ANSI off. A typo such as 265 therefore silently yields NULL hashes.",
+      "example_sql": "SELECT sha2('Spark', 100)",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "hash",
+      "trap": "`hash(...)` is a 32-bit signed Murmur3 hash, so the result is type-sensitive: the same numeric value hashes differently as INT and as BIGINT. NULL arguments are skipped rather than making the result NULL.",
+      "example_sql": "SELECT hash(1) = hash(CAST(1 AS BIGINT))",
+      "expected": "false",
+      "actual": "false",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "xxhash64",
+      "trap": "NULL inputs do not produce NULL. They are skipped, so an all-NULL argument list returns the seed value 42. NULL keys therefore all collide on 42 rather than being filtered out.",
+      "example_sql": "SELECT xxhash64(NULL)",
+      "expected": "42",
+      "actual": "42",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "crc32",
+      "trap": "Unlike `hash(...)`, which returns a possibly negative INT, `crc32(...)` returns the unsigned CRC-32 value widened to BIGINT, so it is never negative.",
+      "example_sql": "SELECT typeof(crc32('Spark'))",
+      "expected": "bigint",
+      "actual": "bigint",
+      "verified": true,
+      "in_part": true
+    }
+  ]
+}

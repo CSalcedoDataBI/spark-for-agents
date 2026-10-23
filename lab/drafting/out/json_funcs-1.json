@@ -1,0 +1,67 @@
+{
+  "notes": [
+    {
+      "function": "from_json",
+      "trap": "Since Spark 3.0, malformed JSON in the default PERMISSIVE mode does not return NULL. It returns a non-NULL struct whose fields are all NULL, so testing the result with IS NULL will not catch bad input.",
+      "example_sql": "SELECT from_json('{\"a\" 1}', 'a INT') IS NULL",
+      "expected": "false",
+      "actual": "false",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "get_json_object",
+      "trap": "Array indexes in the JSONPath are 0-based, unlike the 1-based `element_at(...)`. The result is always a STRING, and an invalid path or invalid JSON returns NULL instead of raising an error.",
+      "example_sql": "SELECT get_json_object('{\"a\":[10,20,30]}', '$.a[1]')",
+      "expected": "20",
+      "actual": "20",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "json_array_length",
+      "trap": "It only counts elements of a top-level JSON array. A JSON object returns NULL, not its number of keys, and so does malformed JSON.",
+      "example_sql": "SELECT json_array_length('{\"a\":1,\"b\":2}')",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "json_object_keys",
+      "trap": "It returns only the outermost object's keys. A top-level JSON array returns NULL instead of an empty array, while '{}' returns an empty array.",
+      "example_sql": "SELECT json_object_keys('[1,2]')",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "json_tuple",
+      "trap": "It is a generator that matches literal top-level field names, not JSONPath expressions. A dotted name like 'a.b' does not navigate into nested objects and yields NULL.",
+      "example_sql": "SELECT json_tuple('{\"a\":{\"b\":1}}', 'a.b')",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "schema_of_json",
+      "trap": "Inferred struct fields are sorted alphabetically, not kept in document order. Integers are inferred as BIGINT and decimals as DOUBLE.",
+      "example_sql": "SELECT schema_of_json('{\"b\":1,\"a\":1.5}')",
+      "expected": "STRUCT<a: DOUBLE, b: BIGINT>",
+      "actual": "STRUCT<a: DOUBLE, b: BIGINT>",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "to_json",
+      "trap": "Struct fields that are NULL are silently dropped from the output by default (ignoreNullFields is true), rather than written as \"b\":null.",
+      "example_sql": "SELECT to_json(named_struct('a', 1, 'b', CAST(NULL AS INT)))",
+      "expected": "{\"a\":1}",
+      "actual": "{\"a\":1}",
+      "verified": true,
+      "in_part": true
+    }
+  ]
+}

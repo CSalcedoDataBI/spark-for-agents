@@ -1,0 +1,112 @@
+{
+  "notes": [
+    {
+      "function": "/",
+      "trap": "`/` always returns a fractional result, even for two integers. Under the default non-ANSI mode, dividing by zero returns NULL instead of raising an error. Use `div(...)` when you want integer division.",
+      "example_sql": "SELECT 7 / 2",
+      "expected": "3.5",
+      "actual": "3.5",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "%",
+      "trap": "The remainder takes the sign of the dividend, as in Java, so a negative left operand gives a negative result. Use `pmod(...)` when you need a non-negative modulus. With ANSI off, `x % 0` returns NULL.",
+      "example_sql": "SELECT -7 % 3",
+      "expected": "-1",
+      "actual": "-1",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "+",
+      "trap": "With ANSI mode off (the default), integer addition silently wraps around on overflow instead of raising an error. Use `try_add(...)` to get NULL on overflow, or cast to BIGINT or DECIMAL first.",
+      "example_sql": "SELECT 2147483647 + 1",
+      "expected": "-2147483648",
+      "actual": "-2147483648",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "*",
+      "trap": "INT * INT stays INT, and with ANSI off an overflow silently wraps to a wrong value instead of failing. Cast an operand to BIGINT first, or use `try_multiply(...)`.",
+      "example_sql": "SELECT 100000 * 100000",
+      "expected": "1410065408",
+      "actual": "1410065408",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "-",
+      "trap": "Subtracting two DATEs returns a day-time INTERVAL, not an integer day count. Use `datediff(...)` when you need a number.",
+      "example_sql": "SELECT DATE'2024-03-01' - DATE'2024-02-01'",
+      "expected": "INTERVAL '29' DAY",
+      "actual": "INTERVAL '29' DAY",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "abs",
+      "trap": "With ANSI off, the absolute value of the minimum INT (or BIGINT) overflows and returns the same negative value. It does not raise an error or widen the type.",
+      "example_sql": "SELECT abs(CAST(-2147483648 AS INT))",
+      "expected": "-2147483648",
+      "actual": "-2147483648",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "acos",
+      "trap": "An argument outside [-1, 1] returns NaN, not NULL and not an error, so `IS NULL` checks will not catch it. `asin(...)` and `atanh(...)` behave the same way.",
+      "example_sql": "SELECT acos(2) IS NULL",
+      "expected": "false",
+      "actual": "false",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "atan2",
+      "trap": "The argument order is (y, x), y first. Writers coming from Excel-style atan2(x, y) often swap the arguments.",
+      "example_sql": "SELECT atan2(1, 0)",
+      "expected": "1.5707963267948966",
+      "actual": "1.5707963267948966",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "bin",
+      "trap": "The input is cast to BIGINT before conversion, so fractional values are truncated, not rounded. Negative numbers give a 64-bit two's-complement string.",
+      "example_sql": "SELECT bin(13.9)",
+      "expected": "1101",
+      "actual": "1101",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "bround",
+      "trap": "`bround(...)` uses HALF_EVEN (banker's) rounding, unlike `round(...)` which uses HALF_UP. Ties therefore go to the even digit.",
+      "example_sql": "SELECT bround(0.125, 2)",
+      "expected": "0.12",
+      "actual": "0.12",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "ceil",
+      "trap": "Without a scale argument, `ceil(...)` on a DOUBLE returns BIGINT, not DOUBLE. Values beyond the BIGINT range are lost.",
+      "example_sql": "SELECT typeof(ceil(2.5D))",
+      "expected": "bigint",
+      "actual": "bigint",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "conv",
+      "trap": "A negative input with a positive target base is treated as an unsigned 64-bit two's-complement value. Pass a negative `to_base` to get signed output.",
+      "example_sql": "SELECT conv('-10', 10, 16)",
+      "expected": "FFFFFFFFFFFFFFF6",
+      "actual": "FFFFFFFFFFFFFFF6",
+      "verified": true,
+      "in_part": true
+    }
+  ]
+}

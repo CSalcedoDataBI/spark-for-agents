@@ -1,0 +1,85 @@
+{
+  "notes": [
+    {
+      "function": "nth_value",
+      "trap": "With an ORDER BY, the default window frame is RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW. Rows before the n-th row therefore get NULL, not the partition's n-th value. To get it on every row, add ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING.",
+      "example_sql": "SELECT nv FROM (SELECT b, nth_value(b, 2) OVER (ORDER BY b) AS nv FROM VALUES (1), (2), (3) t(b)) WHERE b = 1",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "lag",
+      "trap": "The `default` argument is used only when the offset row does not exist, such as at the start of the partition. If the previous row exists but its value is NULL, `lag(...)` returns NULL, not the default. Wrap the result in `coalesce(...)` or use IGNORE NULLS if you want a fallback for NULL values.",
+      "example_sql": "SELECT l FROM (SELECT id, lag(v, 1, 0) OVER (ORDER BY id) AS l FROM VALUES (1, CAST(NULL AS INT)), (2, 5) t(id, v)) WHERE id = 2",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "lead",
+      "trap": "The offset is not required to be positive. `lead(x, -1)` looks backwards and behaves like `lag(x, 1)`, so a sign mistake in the offset silently reverses the direction instead of raising an error.",
+      "example_sql": "SELECT l FROM (SELECT id, lead(id, -1) OVER (ORDER BY id) AS l FROM VALUES (1), (2), (3) t(id)) WHERE id = 3",
+      "expected": "2",
+      "actual": "2",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "rank",
+      "trap": "Tied rows share a rank and the following rank skips numbers. After two rows tied at 1, the next row gets 3, not 2. Use `dense_rank(...)` when you need consecutive ranks.",
+      "example_sql": "SELECT r FROM (SELECT b, rank() OVER (ORDER BY b) AS r FROM VALUES (1), (1), (2) t(b)) WHERE b = 2",
+      "expected": "3",
+      "actual": "3",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "dense_rank",
+      "trap": "Ties share a rank and there are no gaps, so the maximum `dense_rank(...)` is the number of distinct ordering values, not the number of rows. Filtering `dense_rank(...) <= N` can therefore return more than N rows.",
+      "example_sql": "SELECT r FROM (SELECT b, dense_rank() OVER (ORDER BY b) AS r FROM VALUES (1), (1), (2) t(b)) WHERE b = 2",
+      "expected": "2",
+      "actual": "2",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "row_number",
+      "trap": "A window ORDER BY is mandatory. `row_number() OVER ()` or OVER (PARTITION BY ...) without ORDER BY fails analysis, unlike some engines that accept it. Ordering on a non-unique key is accepted, but the numbering among tied rows is nondeterministic.",
+      "example_sql": "SELECT row_number() OVER () FROM VALUES (1) t(a)",
+      "expected": "ERROR: AnalysisException",
+      "actual": "ERROR: AnalysisException _LEGACY_ERROR_TEMP_1037 :: Window function row_number() requires window to be ordered, please add ORDER BY clause. For example SELECT row_number()(value_expr) OVER (PARTITION BY window_partition ORDER BY window_ordering) from table.",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "ntile",
+      "trap": "`ntile(n)` never creates empty buckets. With fewer rows than n, the bucket numbers stop at the row count. When rows do not divide evenly, the lower-numbered buckets get the extra rows.",
+      "example_sql": "SELECT max(n) FROM (SELECT ntile(4) OVER (ORDER BY id) AS n FROM VALUES (1), (2), (3) t(id))",
+      "expected": "3",
+      "actual": "3",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "percent_rank",
+      "trap": "The formula is (rank - 1) / (rows in partition - 1), and it is computed from `rank(...)`, so ties give gaps. The first row and any single-row partition get 0.0, whereas `cume_dist(...)` gives 1.0 for a single-row partition.",
+      "example_sql": "SELECT percent_rank() OVER (ORDER BY x) FROM VALUES (5) t(x)",
+      "expected": "0.0",
+      "actual": "0.0",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "cume_dist",
+      "trap": "The result is (number of rows with an ordering value <= the current row's) / (rows in partition), so all tied peers count. The first row of a tied group does not get 1/n: here both 1s get 2/3, returned as a DOUBLE.",
+      "example_sql": "SELECT min(c) FROM (SELECT b, cume_dist() OVER (ORDER BY b) AS c FROM VALUES (1), (1), (2) t(b)) WHERE b = 1",
+      "expected": "0.6666666666666666",
+      "actual": "0.6666666666666666",
+      "verified": true,
+      "in_part": true
+    }
+  ]
+}

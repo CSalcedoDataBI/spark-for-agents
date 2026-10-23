@@ -1,0 +1,22 @@
+{
+  "notes": [
+    {
+      "function": "named_struct",
+      "trap": "`CAST(... AS STRING)` on a struct drops the field names and prints only the values in curly braces, e.g. `{1, x}`. It does not produce a JSON-like `{\"a\":1,...}`, even though the docs display struct results that way. Use `to_json(...)` to get a string that keeps the field names.",
+      "example_sql": "SELECT CAST(named_struct('a', 1, 'b', 'x') AS STRING)",
+      "expected": "{1, x}",
+      "actual": "{1, x}",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "struct",
+      "trap": "Field names are not always `col1`, `col2`, .... When an argument is a column reference or an aliased expression, its name becomes the field name. Only unnamed expressions such as literals get the positional `colN` name, based on the argument's position.",
+      "example_sql": "SELECT typeof(struct(x, 2)) FROM VALUES (1) AS t(x)",
+      "expected": "struct<x:int,col2:int>",
+      "actual": "struct<x:int,col2:int>",
+      "verified": true,
+      "in_part": true
+    }
+  ]
+}
