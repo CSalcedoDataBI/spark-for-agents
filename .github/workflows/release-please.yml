@@ -25,7 +25,9 @@ jobs:
     # R3: the action reads commits and updates one PR, well under a minute.
     timeout-minutes: 10
     steps:
-      - uses: googleapis/release-please-action@v4
+      # Pinned to a commit: this step holds write tokens, so the code it runs must not move
+      # with a tag. The SHA is what the v4 tag pointed to on 2026-10-23.
+      - uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4
         id: release
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
