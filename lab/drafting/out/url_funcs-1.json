@@ -1,0 +1,31 @@
+{
+  "notes": [
+    {
+      "function": "parse_url",
+      "trap": "The partToExtract argument is case-sensitive and must be upper case: HOST, PATH, QUERY, REF, PROTOCOL, FILE, AUTHORITY or USERINFO. With ANSI off (the default), a lower-case or unknown part name raises no error and silently returns NULL. A malformed URL also returns NULL.",
+      "example_sql": "SELECT parse_url('http://spark.apache.org/path?query=1', 'host')",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "url_decode",
+      "trap": "It decodes using form-urlencoded rules rather than plain percent-decoding. A literal '+' therefore becomes a space, so URLs or Base64 values that contain a real '+' are silently changed.",
+      "example_sql": "SELECT url_decode('a+b%20c')",
+      "expected": "a b c",
+      "actual": "a b c",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "url_encode",
+      "trap": "It follows Java form-urlencoded rules rather than RFC 3986 percent-encoding. A space is encoded as '+' (not '%20'), and '~' is encoded as '%7E'. Do not use it to build URL path segments that expect %20.",
+      "example_sql": "SELECT url_encode('a b~')",
+      "expected": "a+b%7E",
+      "actual": "a+b%7E",
+      "verified": true,
+      "in_part": true
+    }
+  ]
+}

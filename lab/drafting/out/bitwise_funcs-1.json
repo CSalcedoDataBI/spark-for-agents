@@ -1,0 +1,67 @@
+{
+  "notes": [
+    {
+      "function": "^",
+      "trap": "In Spark, `^` is bitwise XOR, not exponentiation as in PostgreSQL. Use `power(...)` or `pow(...)` to raise to a power.",
+      "example_sql": "SELECT 2 ^ 3",
+      "expected": "1",
+      "actual": "1",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "&",
+      "trap": "Arithmetic operators bind tighter than `&`, so `6 & 3 + 1` parses as `6 & (3 + 1)`, not `(6 & 3) + 1`. Add parentheses when mixing bitwise and arithmetic operators.",
+      "example_sql": "SELECT 6 & 3 + 1",
+      "expected": "4",
+      "actual": "4",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "|",
+      "trap": "Spark's bitwise operators have different precedence: `&` binds tightest, then `^`, then `|`. They are not evaluated left to right, so `4 | 4 ^ 4` parses as `4 | (4 ^ 4)`.",
+      "example_sql": "SELECT 4 | 4 ^ 4",
+      "expected": "4",
+      "actual": "4",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "bit_count",
+      "trap": "Integral inputs are sign-extended to 64 bits before the bits are counted. A negative INT therefore reports 64 set bits, not 32.",
+      "example_sql": "SELECT bit_count(-1)",
+      "expected": "64",
+      "actual": "64",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "bit_get",
+      "trap": "Positions are 0-based from the least significant bit. A position at or beyond the input type's width raises an error rather than returning 0. An INT literal allows only positions 0 to 31, so cast to BIGINT for higher bits.",
+      "example_sql": "SELECT bit_get(11, 40)",
+      "expected": "ERROR: INVALID_PARAMETER_VALUE.BIT_POSITION_RANGE",
+      "actual": "ERROR: IllegalArgumentException :: Invalid bit position: 40 exceeds the bit upper limit",
+      "verified": false,
+      "in_part": true
+    },
+    {
+      "function": "shiftright",
+      "trap": "Java shift semantics apply: for an INT base, only the low 5 bits of the shift amount are used, so shifting by 33 behaves like shifting by 1. The shift is signed, so negative values stay negative.",
+      "example_sql": "SELECT shiftright(8, 33)",
+      "expected": "4",
+      "actual": "4",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "shiftrightunsigned",
+      "trap": "The result keeps the base's type. An INT -1 shifted unsigned by 1 gives the 32-bit maximum, not the 64-bit one; cast the base to BIGINT for 64-bit behaviour.",
+      "example_sql": "SELECT shiftrightunsigned(-1, 1)",
+      "expected": "2147483647",
+      "actual": "2147483647",
+      "verified": true,
+      "in_part": true
+    }
+  ]
+}

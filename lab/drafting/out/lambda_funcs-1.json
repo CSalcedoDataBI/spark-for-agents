@@ -1,0 +1,94 @@
+{
+  "notes": [
+    {
+      "function": "aggregate",
+      "trap": "The accumulator type is fixed by the `start` value. A literal 0 is INT, so merging DECIMAL or DOUBLE elements makes the merge result type differ from the start type, and analysis fails instead of widening. Cast the start value, for example CAST(0 AS DOUBLE), to match the merged type.",
+      "example_sql": "SELECT aggregate(array(1.5, 2.5), 0, (acc, x) -> acc + x)",
+      "expected": "ERROR: DATATYPE_MISMATCH.UNEXPECTED_INPUT_TYPE",
+      "actual": "ERROR: AnalysisException DATATYPE_MISMATCH.UNEXPECTED_INPUT_TYPE :: [DATATYPE_MISMATCH.UNEXPECTED_INPUT_TYPE] Cannot resolve \"aggregate(array(1.5, 2.5), 0, lambdafunction((namedlambdavariable() + namedlambdavariable()), namedlambdavariable(), namedlambdavariable()), lambdafunction(namedlambdavariable(), namedlambdavariable()))\" due to data type mismatch: Parameter 3",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "reduce",
+      "trap": "`reduce(...)` is an alias of `aggregate(...)` added in 3.4.0, and it has no NULL skipping. A single NULL element turns `acc + x` into NULL, and the result stays NULL from then on. This differs from `sum(...)`, which ignores NULLs.",
+      "example_sql": "SELECT reduce(array(1, NULL, 3), 0, (acc, x) -> acc + x)",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "array_sort",
+      "trap": "Without a comparator, NULL elements go to the END of the array, whereas ascending `sort_array(...)` puts them first. With a comparator, NULLs are not handled for you: the lambda must deal with them, because a comparator that returns NULL raises an error.",
+      "example_sql": "SELECT CAST(array_sort(array(3, NULL, 1)) AS STRING)",
+      "expected": "[1, 3, null]",
+      "actual": "[1, 3, null]",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "exists",
+      "trap": "`exists(...)` uses three-valued logic. If no element satisfies the predicate and the predicate evaluates to NULL for some element, the result is NULL, not false, so a WHERE clause silently drops the row.",
+      "example_sql": "SELECT exists(array(1, NULL, 3), x -> x % 2 = 0)",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "filter",
+      "trap": "The optional second lambda argument is a 0-based index, unlike the 1-based `element_at(...)` and `slice(...)`. Elements for which the predicate returns NULL are dropped, just like false.",
+      "example_sql": "SELECT CAST(filter(array(10, 20, 30), (x, i) -> i = 1) AS STRING)",
+      "expected": "[20]",
+      "actual": "[20]",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "forall",
+      "trap": "If no element makes the predicate false and the predicate evaluates to NULL for some element, `forall(...)` returns NULL rather than true. It only returns false when at least one element definitely fails.",
+      "example_sql": "SELECT forall(array(2, NULL, 8), x -> x % 2 = 0)",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "map_zip_with",
+      "trap": "The result has the union of keys from both maps, and a key missing from one map is passed to the lambda with NULL as its value. A plain `v1 + v2` or `concat(...)` therefore yields NULL for those keys unless you wrap the values in `coalesce(...)`.",
+      "example_sql": "SELECT element_at(map_zip_with(map('a', 1), map('b', 2), (k, v1, v2) -> v1 + v2), 'a')",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "transform",
+      "trap": "The optional second lambda argument is a 0-based position, not 1-based as in `element_at(...)`, so code ported from 1-based logic will be off by one.",
+      "example_sql": "SELECT CAST(transform(array(10, 20, 30), (x, i) -> i) AS STRING)",
+      "expected": "[0, 1, 2]",
+      "actual": "[0, 1, 2]",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "transform_keys",
+      "trap": "If the lambda maps two keys to the same new key, the query fails at runtime under the default spark.sql.mapKeyDedupPolicy=EXCEPTION; it does not keep the last value. A lambda that produces a NULL key also fails.",
+      "example_sql": "SELECT transform_keys(map(1, 'a', 2, 'b'), (k, v) -> 0)",
+      "expected": "ERROR: DUPLICATED_MAP_KEY",
+      "actual": "ERROR: Py4JJavaError :: : org.apache.spark.SparkException: Job aborted due to stage failure: Task 0 in stage 254.0 failed 1 times, most recent failure: Lost task 0.0 in stage 254.0 (TID 205) (DESKTOP-IDCJBHU executor driver): org.apache.spark.SparkRuntimeException: [DUPLICATED_MAP_KEY] Duplicate map key 0 was found, please",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "zip_with",
+      "trap": "Arrays of different lengths are not truncated to the shorter one: the shorter array is padded with NULLs. The lambda then typically returns NULL for the extra positions.",
+      "example_sql": "SELECT CAST(zip_with(array(1, 2, 3), array(10, 20), (x, y) -> x + y) AS STRING)",
+      "expected": "[11, 22, null]",
+      "actual": "[11, 22, null]",
+      "verified": true,
+      "in_part": true
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "notes": [
+    {
+      "function": "slice",
+      "trap": "A negative `start` counts from the end, but if it reaches past the beginning the result is an empty array rather than being clamped to the first element. A `start` of 0 raises a runtime error instead of being treated as 1, while a `length` that runs past the end is silently truncated.",
+      "example_sql": "SELECT slice(array(1, 2, 3, 4), -5, 3)",
+      "expected": "[]",
+      "actual": "[]",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "sort_array",
+      "trap": "In ascending order (the default), NULL elements are placed first, and in descending order they are placed last. `array_sort(...)` instead puts NULLs last in ascending order, so the two functions are not interchangeable.",
+      "example_sql": "SELECT sort_array(array(3, NULL, 1))",
+      "expected": "[null, 1, 3]",
+      "actual": "[null, 1, 3]",
+      "verified": true,
+      "in_part": true
+    }
+  ]
+}

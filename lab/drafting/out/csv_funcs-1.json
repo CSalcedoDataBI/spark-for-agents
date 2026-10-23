@@ -1,0 +1,31 @@
+{
+  "notes": [
+    {
+      "function": "from_csv",
+      "trap": "The default mode is PERMISSIVE, so a field that does not parse into its declared type silently becomes NULL while the other fields of the struct are still filled in. No error is raised even with a wrong schema. The schema argument must be a literal DDL string, not a column.",
+      "example_sql": "SELECT from_csv('1,abc', 'a INT, b INT').b",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "schema_of_csv",
+      "trap": "It infers types from a single CSV line and always names the columns `_c0`, `_c1`, ... because the first line is never treated as a header. The argument must be a foldable string literal, so you cannot pass a table column to it. The result is a DDL string, typically fed to `from_csv(...)`.",
+      "example_sql": "SELECT schema_of_csv('1,abc')",
+      "expected": "STRUCT<_c0: INT, _c1: STRING>",
+      "actual": "STRUCT<_c0: INT, _c1: STRING>",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "to_csv",
+      "trap": "A NULL field is written as an empty string (the default nullValue is ''), so a NULL turns into a trailing or embedded empty column instead of the text NULL. The output carries no header and no field names, only the values.",
+      "example_sql": "SELECT to_csv(named_struct('a', 1, 'b', CAST(NULL AS INT)))",
+      "expected": "1,",
+      "actual": "1,",
+      "verified": true,
+      "in_part": true
+    }
+  ]
+}

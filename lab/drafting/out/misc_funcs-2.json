@@ -1,0 +1,40 @@
+{
+  "notes": [
+    {
+      "function": "typeof",
+      "trap": "A literal with a decimal point is typed as an exact DECIMAL sized to the literal, not as DOUBLE, so `typeof(1.5)` reports `decimal(2,1)`. Only scientific notation such as `1.5e0` gives `double`. A bare NULL reports `void`, not a concrete type.",
+      "example_sql": "SELECT typeof(1.5)",
+      "expected": "decimal(2,1)",
+      "actual": "decimal(2,1)",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "user",
+      "trap": "`user()` is an alias of `current_user(...)` and returns the same session user name. The value depends on the environment, for example the OS or Kerberos user. Do not hard-code an expected value; compare it with `current_user(...)` instead.",
+      "example_sql": "SELECT user() = current_user()",
+      "expected": "true",
+      "actual": "true",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "uuid",
+      "trap": "`uuid()` returns a plain STRING, not a UUID type: a 36-character lowercase hex form with hyphens. It is non-deterministic, so every call site, including two calls in the same SELECT, produces a different value. Do not rely on it as a join key that can be recomputed.",
+      "example_sql": "SELECT length(uuid())",
+      "expected": "36",
+      "actual": "36",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "version",
+      "trap": "`version()` does not return just the release number. It returns the release version, a space and the git revision hash. Comparing it directly with '3.5.9' is false; extract the first field first.",
+      "example_sql": "SELECT substring_index(version(), ' ', 1)",
+      "expected": "3.5.9",
+      "actual": "3.5.9",
+      "verified": true,
+      "in_part": true
+    }
+  ]
+}

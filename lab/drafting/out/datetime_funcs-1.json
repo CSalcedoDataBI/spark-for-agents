@@ -1,0 +1,121 @@
+{
+  "notes": [
+    {
+      "function": "add_months",
+      "trap": "If the result day does not exist, it is clamped to the last day of the target month. Since Spark 3.0, a start date that is the last day of its month is not moved to the end of the target month, so Feb 29 + 1 month gives Mar 29, not Mar 31. The result is always a DATE, so any time part of a timestamp input is dropped.",
+      "example_sql": "SELECT add_months(DATE'2016-02-29', 1)",
+      "expected": "2016-03-29",
+      "actual": "2016-03-29",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "convert_timezone",
+      "trap": "In the two-argument form the single zone argument is the TARGET zone. The source zone is the session time zone (UTC here), not the zone you passed. The input and result are TIMESTAMP_NTZ (wall-clock values).",
+      "example_sql": "SELECT convert_timezone('America/Los_Angeles', timestamp_ntz'2021-12-06 00:00:00')",
+      "expected": "2021-12-05 16:00:00",
+      "actual": "2021-12-05 16:00:00",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "date_add",
+      "trap": "The result is always a DATE. A timestamp argument is implicitly cast to DATE, so its time of day is silently discarded instead of the call returning a timestamp shifted by N days.",
+      "example_sql": "SELECT date_add(TIMESTAMP'2016-07-30 23:59:59', 1)",
+      "expected": "2016-07-31",
+      "actual": "2016-07-31",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "dateadd",
+      "trap": "The two-argument `dateadd(start_date, num_days)` is just `date_add(...)`: it adds days and returns a DATE, dropping any time part. Do not assume SQL Server style `DATEADD(unit, n, date)` semantics from the name.",
+      "example_sql": "SELECT dateadd(TIMESTAMP'2016-07-30 12:00:00', 1)",
+      "expected": "2016-07-31",
+      "actual": "2016-07-31",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "date_diff",
+      "trap": "The argument order is (endDate, startDate), the reverse of SQL Server or Snowflake style (start, end). Passing the earlier date first gives a negative result.",
+      "example_sql": "SELECT date_diff('2009-07-30', '2009-07-31')",
+      "expected": "-1",
+      "actual": "-1",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "datediff",
+      "trap": "Both arguments are cast to DATE before subtracting, so time of day is ignored. Two timestamps two seconds apart across midnight differ by 1, not 0. The argument order is (end, start).",
+      "example_sql": "SELECT datediff(TIMESTAMP'2009-07-31 00:00:01', TIMESTAMP'2009-07-30 23:59:59')",
+      "expected": "1",
+      "actual": "1",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "date_format",
+      "trap": "Patterns are case-sensitive Java-style letters: 'mm' is minutes and 'MM' is month, 'hh' is 12-hour and 'HH' is 24-hour. Writing 'yyyy-mm-dd' silently puts the minutes where the month should be.",
+      "example_sql": "SELECT date_format(TIMESTAMP'2016-04-08 10:05:00', 'yyyy-mm-dd')",
+      "expected": "2016-05-08",
+      "actual": "2016-05-08",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "date_part",
+      "trap": "The 'SECOND' field returns DECIMAL(8,6) including fractions, not an integer like `second(...)`. Whole seconds therefore print with six decimal places.",
+      "example_sql": "SELECT CAST(date_part('SECOND', TIMESTAMP'2019-10-01 00:00:01') AS STRING)",
+      "expected": "1.000000",
+      "actual": "1.000000",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "datepart",
+      "trap": "'DOW' numbers days Sunday=1..Saturday=7, while 'DOW_ISO' numbers them Monday=1..Sunday=7. Picking the wrong one shifts Sunday from 1 to 7.",
+      "example_sql": "SELECT datepart('DOW_ISO', DATE'2009-07-26')",
+      "expected": "7",
+      "actual": "7",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "date_trunc",
+      "trap": "The argument order is (fmt, ts), the reverse of `trunc(date, fmt)`. It always returns a TIMESTAMP, even for a DATE input. An unsupported unit string returns NULL rather than raising an error.",
+      "example_sql": "SELECT CAST(date_trunc('MM', DATE'2015-03-05') AS STRING)",
+      "expected": "2015-03-01 00:00:00",
+      "actual": "2015-03-01 00:00:00",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "dayofweek",
+      "trap": "It returns 1 = Sunday through 7 = Saturday, not ISO numbering. `weekday(...)` uses 0 = Monday through 6 = Sunday, so the two functions disagree for the same date.",
+      "example_sql": "SELECT dayofweek(DATE'2009-07-26')",
+      "expected": "1",
+      "actual": "1",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "extract",
+      "trap": "WEEK is the ISO 8601 week number. Early-January dates can belong to week 52 or 53 of the previous year, so the result is not a simple day-of-year / 7.",
+      "example_sql": "SELECT extract(WEEK FROM DATE'2005-01-02')",
+      "expected": "53",
+      "actual": "53",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "from_unixtime",
+      "trap": "It returns a formatted STRING, not a TIMESTAMP, rendered in the session time zone. To get a real timestamp, use `timestamp_seconds(...)` instead.",
+      "example_sql": "SELECT typeof(from_unixtime(0))",
+      "expected": "string",
+      "actual": "string",
+      "verified": true,
+      "in_part": true
+    }
+  ]
+}

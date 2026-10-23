@@ -1,0 +1,139 @@
+{
+  "notes": [
+    {
+      "function": "split",
+      "trap": "The second argument is a Java regex, not a literal delimiter. A bare '.' matches every character. Trailing empty strings are kept, unlike Java's default split.",
+      "example_sql": "SELECT size(split('a.b.c', '.'))",
+      "expected": "6",
+      "actual": "6",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "split_part",
+      "trap": "The delimiter is a literal string, not a regex. An out-of-range partNum returns an empty string rather than NULL, and partNum 0 raises an error.",
+      "example_sql": "SELECT concat('[', split_part('a,b', ',', 5), ']')",
+      "expected": "[]",
+      "actual": "[]",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "substring",
+      "trap": "Positions are 1-based, but pos 0 is silently treated like pos 1. Other engines such as PostgreSQL count position 0 as one character before the start, so they return one character fewer.",
+      "example_sql": "SELECT substring('Spark SQL', 0, 3)",
+      "expected": "Spa",
+      "actual": "Spa",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "substr",
+      "trap": "A negative pos counts from the end of the string, and len is then applied going forward from that point.",
+      "example_sql": "SELECT substr('Spark SQL', -3, 2)",
+      "expected": "SQ",
+      "actual": "SQ",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "substring_index",
+      "trap": "A negative count returns everything to the right of the count-th delimiter, counted from the right. The delimiter match is case-sensitive.",
+      "example_sql": "SELECT substring_index('www.apache.org', '.', -2)",
+      "expected": "apache.org",
+      "actual": "apache.org",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "trim",
+      "trap": "In trim(trimStr FROM str), trimStr is a set of characters, not a substring. Any combination of those characters is stripped from both ends. Note the argument order: the characters to remove come before FROM.",
+      "example_sql": "SELECT trim('ab' FROM 'abbaXba')",
+      "expected": "X",
+      "actual": "X",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "rtrim",
+      "trap": "The one-argument form removes only the space character (0x20). Trailing tabs and newlines are kept.",
+      "example_sql": "SELECT length(rtrim('a\\t'))",
+      "expected": "2",
+      "actual": "2",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "soundex",
+      "trap": "If the first character is not a letter, the input string is returned unchanged rather than a Soundex code or NULL.",
+      "example_sql": "SELECT soundex('1Miller')",
+      "expected": "1Miller",
+      "actual": "1Miller",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "space",
+      "trap": "A negative n returns an empty string instead of NULL or an error.",
+      "example_sql": "SELECT length(space(-3))",
+      "expected": "0",
+      "actual": "0",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "to_binary",
+      "trap": "When fmt is omitted the default is 'hex', not 'utf-8', so a string like 'abc' is parsed as hex digits. An odd-length hex string is left-padded with a 0 nibble.",
+      "example_sql": "SELECT hex(to_binary('abc'))",
+      "expected": "0ABC",
+      "actual": "0ABC",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "to_char",
+      "trap": "A format digit '9' pads unused positions with spaces, not zeros. Use '0' to get zero padding.",
+      "example_sql": "SELECT concat('[', to_char(5, '999'), ']')",
+      "expected": "[  5]",
+      "actual": "[  5]",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "to_varchar",
+      "trap": "`to_varchar(...)` is only an alias of `to_char(...)` for numbers. It is not a cast to VARCHAR. A format starting with '0' zero-pads the integer part.",
+      "example_sql": "SELECT to_varchar(5, '000')",
+      "expected": "005",
+      "actual": "005",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "to_number",
+      "trap": "The result is a DECIMAL whose precision and scale come from the format string, not from the input value. Inputs that do not match the format raise an error.",
+      "example_sql": "SELECT typeof(to_number('454', '999'))",
+      "expected": "decimal(3,0)",
+      "actual": "decimal(3,0)",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "try_to_number",
+      "trap": "A '9' sequence can match the same number of digits or fewer, but never more. An input with too many digits for the format gives NULL here, whereas `to_number(...)` would raise an error.",
+      "example_sql": "SELECT try_to_number('1234', '999')",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "translate",
+      "trap": "When `from` is longer than `to`, the extra characters in `from` are deleted from the input rather than left unchanged.",
+      "example_sql": "SELECT translate('AaBbCc', 'abc', '1')",
+      "expected": "A1BC",
+      "actual": "A1BC",
+      "verified": true,
+      "in_part": true
+    }
+  ]
+}

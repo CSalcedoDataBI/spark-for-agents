@@ -1,0 +1,58 @@
+{
+  "notes": [
+    {
+      "function": "!=",
+      "trap": "`!=` follows three-valued logic. If either side is NULL the result is NULL, not true or false, so `col != 'x'` silently drops rows where `col` is NULL. For a NULL-safe inequality, use `NOT (a <=> b)`.",
+      "example_sql": "SELECT NULL != NULL",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "<>",
+      "trap": "With ANSI mode off, comparing a string with a number implicitly casts the string to the numeric type. A string that does not parse becomes NULL, so the comparison returns NULL instead of true, and no error is raised.",
+      "example_sql": "SELECT 'abc' <> 1",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "between",
+      "trap": "`x BETWEEN a AND b` includes both ends and means exactly `x >= a AND x <= b`. It does not swap reversed bounds, so a lower bound greater than the upper bound always returns false.",
+      "example_sql": "SELECT 5 BETWEEN 10 AND 1",
+      "expected": "false",
+      "actual": "false",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "case",
+      "trap": "Simple `CASE expr WHEN v` compares with `=`, so `WHEN NULL` never matches, even when `expr` is NULL. Write `CASE WHEN expr IS NULL THEN ...` instead.",
+      "example_sql": "SELECT CASE NULL WHEN NULL THEN 'matched' ELSE 'not matched' END",
+      "expected": "not matched",
+      "actual": "not matched",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "range",
+      "trap": "`range(...)` is a table-valued function, so it is used in FROM, not as a scalar. The end bound is exclusive, and the single-argument form `range(n)` starts at 0. The output is one BIGINT column named `id`.",
+      "example_sql": "SELECT max(id) FROM range(10)",
+      "expected": "9",
+      "actual": "9",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "||",
+      "trap": "`||` is string concatenation (the same as `concat(...)`), not logical OR. Any NULL operand makes the whole result NULL. Use `concat_ws(...)` or `coalesce(...)` if NULLs should be skipped.",
+      "example_sql": "SELECT 'a' || NULL || 'b'",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    }
+  ]
+}

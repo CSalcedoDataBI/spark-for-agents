@@ -1,0 +1,67 @@
+{
+  "notes": [
+    {
+      "function": "explode",
+      "trap": "A NULL or empty array or map yields zero rows, so the whole input row silently disappears; use `explode_outer(...)` to keep it. When used on a map it produces two columns named `key` and `value`, not one.",
+      "example_sql": "SELECT count(*) FROM (SELECT explode(CAST(NULL AS ARRAY<INT>)) AS x)",
+      "expected": "0",
+      "actual": "0",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "explode_outer",
+      "trap": "Unlike `explode(...)`, a NULL or empty collection produces exactly one row whose generated column is NULL. Downstream counts therefore see an extra row, not zero rows.",
+      "example_sql": "SELECT x FROM (SELECT explode_outer(filter(array(1), v -> v > 5)) AS x)",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "posexplode",
+      "trap": "The generated `pos` column is 0-based, while `element_at(...)` and `array_position(...)` are 1-based. Mixing the two causes off-by-one errors.",
+      "example_sql": "SELECT max(pos) FROM (SELECT posexplode(array('a', 'b')))",
+      "expected": "1",
+      "actual": "1",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "posexplode_outer",
+      "trap": "For a NULL or empty collection it emits one row in which both `pos` and `col` are NULL. The position is not 0, so filters such as `pos = 0` drop that row.",
+      "example_sql": "SELECT pos FROM (SELECT posexplode_outer(CAST(NULL AS ARRAY<INT>)))",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "inline",
+      "trap": "Output column names come from the struct's field names: a struct built with `named_struct(...)` yields those names, and only `struct(...)` with unnamed values gives col1, col2. A NULL array produces zero rows.",
+      "example_sql": "SELECT b FROM (SELECT inline(array(named_struct('a', 1, 'b', 'x'))))",
+      "expected": "x",
+      "actual": "x",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "inline_outer",
+      "trap": "A NULL or empty array of structs yields one row with every struct field set to NULL instead of no rows. This differs from `inline(...)`, which drops the row.",
+      "example_sql": "SELECT count(*) FROM (SELECT inline_outer(CAST(NULL AS ARRAY<STRUCT<a:INT,b:STRING>>)))",
+      "expected": "1",
+      "actual": "1",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "stack",
+      "trap": "Default column names are 0-based (col0, col1, ...), unlike `inline(...)`, which starts at col1. If the value count is not a multiple of n, the last row is padded with NULL. Values that land in the same column must have the same type, because only NULLs are coerced.",
+      "example_sql": "SELECT count(*) FROM (SELECT stack(2, 1, 2, 3)) WHERE col1 IS NULL",
+      "expected": "1",
+      "actual": "1",
+      "verified": true,
+      "in_part": true
+    }
+  ]
+}

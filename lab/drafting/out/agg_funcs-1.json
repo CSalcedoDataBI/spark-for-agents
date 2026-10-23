@@ -1,0 +1,121 @@
+{
+  "notes": [
+    {
+      "function": "avg",
+      "trap": "For DECIMAL input the result is DECIMAL with precision and scale each widened by 4, not DOUBLE, so extra trailing zeros appear. Integer input returns DOUBLE.",
+      "example_sql": "SELECT avg(col) FROM VALUES (1.0), (2.0) AS tab(col)",
+      "expected": "1.50000",
+      "actual": "1.50000",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "count",
+      "trap": "`count(a, b)` with several arguments counts only rows where every argument is non-NULL, so one NULL column drops the whole row. `count(DISTINCT a, b)` behaves the same way.",
+      "example_sql": "SELECT count(a, b) FROM VALUES (1, NULL), (2, 3) AS tab(a, b)",
+      "expected": "1",
+      "actual": "1",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "count_if",
+      "trap": "Rows where the predicate evaluates to NULL are not counted; only TRUE counts. The argument must be BOOLEAN, so pass a comparison rather than a number.",
+      "example_sql": "SELECT count_if(col > 1) FROM VALUES (NULL), (1), (2) AS tab(col)",
+      "expected": "1",
+      "actual": "1",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "bool_and",
+      "trap": "NULLs are ignored rather than following three-valued AND logic. If every input is NULL, or there are no rows, the result is NULL, not true.",
+      "example_sql": "SELECT bool_and(col) FROM VALUES (CAST(NULL AS BOOLEAN)), (CAST(NULL AS BOOLEAN)) AS tab(col)",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "every",
+      "trap": "Same as `bool_and(...)`: NULL inputs are skipped, so a group containing true and NULL returns true rather than NULL.",
+      "example_sql": "SELECT every(col) FROM VALUES (true), (CAST(NULL AS BOOLEAN)) AS tab(col)",
+      "expected": "true",
+      "actual": "true",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "bool_or",
+      "trap": "Over zero rows, or only NULLs, the result is NULL, not false. `any(...)` and `some(...)` are aliases with identical NULL behaviour.",
+      "example_sql": "SELECT bool_or(col) FROM VALUES (true) AS tab(col) WHERE col = false",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "any_value",
+      "trap": "By default NULLs are not skipped, so a NULL row can be returned even when non-NULL values exist. Pass true as the second argument to ignore NULLs.",
+      "example_sql": "SELECT any_value(col) FROM VALUES (NULL), (5), (20) AS tab(col)",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "collect_list",
+      "trap": "NULL values are silently dropped from the result array. Element order follows row order and is not guaranteed after a shuffle.",
+      "example_sql": "SELECT size(collect_list(col)) FROM VALUES (1), (NULL), (2) AS tab(col)",
+      "expected": "2",
+      "actual": "2",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "collect_set",
+      "trap": "NULLs are dropped and element order is unspecified. Wrap the result in `array_sort(...)` if you need a stable order.",
+      "example_sql": "SELECT size(collect_set(col)) FROM VALUES (1), (1), (NULL) AS tab(col)",
+      "expected": "1",
+      "actual": "1",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "array_agg",
+      "trap": "This is an alias of `collect_list(...)`: NULLs are dropped, duplicates are kept, and order is not guaranteed.",
+      "example_sql": "SELECT size(array_agg(col)) FROM VALUES (1), (NULL), (1) AS tab(col)",
+      "expected": "2",
+      "actual": "2",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "approx_percentile",
+      "trap": "It returns an actual value from the data, with the input's type, and never interpolates. `percentile(...)` does interpolate, so the two disagree on even-sized inputs.",
+      "example_sql": "SELECT approx_percentile(col, 0.5) FROM VALUES (1), (2), (3), (4) AS tab(col)",
+      "expected": "2",
+      "actual": "2",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "corr",
+      "trap": "With only one input pair Spark 3.x returns NULL, not NaN. NaN comes back only with spark.sql.legacy.statisticalAggregate=true.",
+      "example_sql": "SELECT corr(c1, c2) FROM VALUES (1, 2) AS tab(c1, c2)",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "covar_samp",
+      "trap": "The sample covariance of a single pair is NULL by default (it was NaN in older versions), whereas `covar_pop(...)` returns 0.0 for the same input.",
+      "example_sql": "SELECT covar_samp(c1, c2) FROM VALUES (1, 2) AS tab(c1, c2)",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    }
+  ]
+}

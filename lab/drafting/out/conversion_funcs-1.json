@@ -1,0 +1,121 @@
+{
+  "notes": [
+    {
+      "function": "int",
+      "trap": "With ANSI mode off, casting an out-of-range numeric to INT silently wraps around instead of failing or returning NULL. Out-of-range strings behave differently and return NULL.",
+      "example_sql": "SELECT int(2147483648)",
+      "expected": "-2147483648",
+      "actual": "-2147483648",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "cast",
+      "trap": "With ANSI off, an unparseable string cast to a number returns NULL rather than raising an error. Thousands separators are not accepted, so formatted numbers silently become NULL.",
+      "example_sql": "SELECT CAST('1,000' AS INT)",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "bigint",
+      "trap": "A string with a fractional part is accepted, and the fraction is truncated toward zero rather than rounded. Negative values move toward zero, unlike `floor(...)`.",
+      "example_sql": "SELECT bigint('-1.9')",
+      "expected": "-1",
+      "actual": "-1",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "tinyint",
+      "trap": "With ANSI off, numeric overflow wraps modulo 256. 128 becomes -128 and no error is raised.",
+      "example_sql": "SELECT tinyint(128)",
+      "expected": "-128",
+      "actual": "-128",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "smallint",
+      "trap": "With ANSI off, a value outside -32768..32767 wraps silently instead of erroring or returning NULL.",
+      "example_sql": "SELECT smallint(40000)",
+      "expected": "-25536",
+      "actual": "-25536",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "decimal",
+      "trap": "decimal(expr) casts to the default DECIMAL(10,0), so the fractional digits are lost. Values are rounded half-up to whole numbers, not truncated. Use `cast(...)` with an explicit precision and scale to keep decimals.",
+      "example_sql": "SELECT decimal(3.7)",
+      "expected": "4",
+      "actual": "4",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "boolean",
+      "trap": "String-to-boolean casts accept more than 'true'/'false': 't', 'y', 'yes', '1' (and their negatives) are recognised case-insensitively. Any other string becomes NULL.",
+      "example_sql": "SELECT boolean('yes')",
+      "expected": "true",
+      "actual": "true",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "date",
+      "trap": "With ANSI off, a well-formed but impossible calendar date returns NULL instead of an error. It is not rolled over into the next month.",
+      "example_sql": "SELECT date('2024-02-30')",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "timestamp",
+      "trap": "A numeric argument is interpreted as seconds since the Unix epoch, not milliseconds. Use `timestamp_millis(...)` for millisecond values. The result is rendered in the session time zone.",
+      "example_sql": "SELECT timestamp(86400)",
+      "expected": "1970-01-02 00:00:00",
+      "actual": "1970-01-02 00:00:00",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "string",
+      "trap": "A DOUBLE converted to string uses Java formatting. Values of 1e7 or larger (and very small values) come out in scientific notation, not plain digits.",
+      "example_sql": "SELECT string(10000000D)",
+      "expected": "1.0E7",
+      "actual": "1.0E7",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "float",
+      "trap": "FLOAT is single precision. Widening it back to DOUBLE exposes binary rounding error that the original decimal literal did not have.",
+      "example_sql": "SELECT double(float(0.1))",
+      "expected": "0.10000000149011612",
+      "actual": "0.10000000149011612",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "double",
+      "trap": "In Spark, NaN equals NaN and sorts above all other values. This differs from IEEE semantics and from many other engines.",
+      "example_sql": "SELECT double('NaN') = double('NaN')",
+      "expected": "true",
+      "actual": "true",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "binary",
+      "trap": "binary(string) takes the UTF-8 bytes of the string. It does not decode hex or base64. Use `unhex(...)` or `unbase64(...)` for those encodings.",
+      "example_sql": "SELECT length(binary('414243'))",
+      "expected": "6",
+      "actual": "6",
+      "verified": true,
+      "in_part": true
+    }
+  ]
+}

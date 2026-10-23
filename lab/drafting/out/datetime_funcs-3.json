@@ -1,0 +1,148 @@
+{
+  "notes": [
+    {
+      "function": "to_date",
+      "trap": "Without `fmt`, `to_date(...)` uses CAST rules, so only ISO-like strings such as 'yyyy-MM-dd[ ...]' parse. Other layouts silently return NULL because ANSI is off by default. Pattern letters are case-sensitive: 'MM' is month and 'mm' is minute.",
+      "example_sql": "SELECT to_date('12/31/2016')",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "to_timestamp",
+      "trap": "Without a format, an offset in the string is honoured. The instant is converted and displayed in the session time zone, so the wall-clock value changes.",
+      "example_sql": "SELECT to_timestamp('2016-12-31 00:12:00+02:00')",
+      "expected": "2016-12-30 22:12:00",
+      "actual": "2016-12-30 22:12:00",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "to_timestamp_ntz",
+      "trap": "When no format is given, a zone or offset in the input is silently dropped rather than applied. The local date-time is kept as written, unlike `to_timestamp(...)`, which converts it.",
+      "example_sql": "SELECT to_timestamp_ntz('2016-12-31 00:12:00+02:00')",
+      "expected": "2016-12-31 00:12:00",
+      "actual": "2016-12-31 00:12:00",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "to_unix_timestamp",
+      "trap": "The default format is 'yyyy-MM-dd HH:mm:ss', not CAST rules. A date-only string without an explicit format fails to parse and returns NULL when ANSI is off.",
+      "example_sql": "SELECT to_unix_timestamp('2016-04-08')",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "unix_timestamp",
+      "trap": "The string is interpreted in the session time zone. The documented example value 1460041200 assumes America/Los_Angeles; under UTC the same call returns a different number.",
+      "example_sql": "SELECT unix_timestamp('2016-04-08', 'yyyy-MM-dd')",
+      "expected": "1460073600",
+      "actual": "1460073600",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "to_utc_timestamp",
+      "trap": "It shifts the wall-clock value by treating the input as local time in the given zone and returning the UTC wall clock. It is the inverse of `from_utc_timestamp(...)`, and the two are easy to swap by mistake.",
+      "example_sql": "SELECT to_utc_timestamp(TIMESTAMP'2016-08-31 00:00:00', 'America/New_York')",
+      "expected": "2016-08-31 04:00:00",
+      "actual": "2016-08-31 04:00:00",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "trunc",
+      "trap": "The argument order is (date, fmt), the reverse of `date_trunc(...)`. Only year, quarter, month and week units are supported. 'DD'/'DAY' or swapped arguments silently return NULL instead of raising an error.",
+      "example_sql": "SELECT trunc('2019-08-04', 'DD')",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "try_to_timestamp",
+      "trap": "With ANSI off (the default) it behaves the same as `to_timestamp(...)`: unparseable input gives NULL. It only differs when ANSI mode is on, where `to_timestamp(...)` would raise an error.",
+      "example_sql": "SELECT try_to_timestamp('2016-13-01', 'yyyy-MM-dd')",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "unix_date",
+      "trap": "Dates before 1970-01-01 give negative day counts rather than NULL or an error.",
+      "example_sql": "SELECT unix_date(DATE'1969-12-31')",
+      "expected": "-1",
+      "actual": "-1",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "unix_seconds",
+      "trap": "The documentation says it truncates sub-second precision, but it actually floors. For timestamps before the epoch, a fractional second rounds toward negative infinity, not toward zero.",
+      "example_sql": "SELECT unix_seconds(TIMESTAMP'1969-12-31 23:59:59.5')",
+      "expected": "-1",
+      "actual": "-1",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "unix_millis",
+      "trap": "Sub-millisecond precision is floored, not truncated toward zero. Pre-epoch timestamps therefore drop to the next lower millisecond.",
+      "example_sql": "SELECT unix_millis(TIMESTAMP'1969-12-31 23:59:59.9995')",
+      "expected": "-1",
+      "actual": "-1",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "weekday",
+      "trap": "It is 0-based starting Monday (Sunday = 6). `dayofweek(...)` is 1-based starting Sunday (Sunday = 1).",
+      "example_sql": "SELECT weekday(DATE'2009-08-02')",
+      "expected": "6",
+      "actual": "6",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "weekofyear",
+      "trap": "It uses ISO-8601 weeks, so early-January dates can fall in week 52 or 53 of the previous year.",
+      "example_sql": "SELECT weekofyear('2021-01-01')",
+      "expected": "53",
+      "actual": "53",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "window",
+      "trap": "Windows are aligned to 1970-01-01 00:00:00 UTC, not to the data. Because the epoch was a Thursday, '1 week' windows start on Thursdays unless you pass a start_time offset.",
+      "example_sql": "SELECT window.start FROM VALUES (TIMESTAMP'2021-01-04 12:00:00') AS t(b) GROUP BY window(b, '1 week')",
+      "expected": "2020-12-31 00:00:00",
+      "actual": "2020-12-31 00:00:00",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "window_time",
+      "trap": "It returns window.end minus one microsecond, not window.end. This reflects the exclusive upper bound of the window.",
+      "example_sql": "SELECT window_time(window) FROM (SELECT window FROM VALUES (TIMESTAMP'2021-01-01 00:01:00') AS t(b) GROUP BY window(b, '5 minutes'))",
+      "expected": "2021-01-01 00:04:59.999999",
+      "actual": "2021-01-01 00:04:59.999999",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "year",
+      "trap": "String arguments are implicitly cast to DATE. An invalid calendar date silently becomes NULL with ANSI off instead of raising an error.",
+      "example_sql": "SELECT year('2016-02-30')",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    }
+  ]
+}

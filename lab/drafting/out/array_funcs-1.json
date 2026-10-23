@@ -1,0 +1,130 @@
+{
+  "notes": [
+    {
+      "function": "array_contains",
+      "trap": "If the value is not found and the array contains a NULL element, the result is NULL, not false. This NULL is easy to miss inside WHERE or NOT filters.",
+      "example_sql": "SELECT array_contains(array(1, NULL), 3)",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "array_position",
+      "trap": "The index is 1-based and returned as BIGINT. A missing element gives 0, not NULL as in some other engines, so `IS NULL` checks never fire.",
+      "example_sql": "SELECT array_position(array(10, 20, 30), 40)",
+      "expected": "0",
+      "actual": "0",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "get",
+      "trap": "`get(...)` is 0-based, unlike `element_at(...)` and `array_position(...)`, which are 1-based. Out-of-range and negative indexes return NULL even with ANSI on.",
+      "example_sql": "SELECT get(array(1, 2, 3), 1)",
+      "expected": "2",
+      "actual": "2",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "array_insert",
+      "trap": "In Spark 3.5, index -1 inserts after the last element. In 3.4 it inserted before the last element. An index past the end pads the array with NULLs, and index 0 raises an error.",
+      "example_sql": "SELECT array_insert(array(1, 2, 3), -1, 9)",
+      "expected": "[1, 2, 3, 9]",
+      "actual": "[1, 2, 3, 9]",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "array_join",
+      "trap": "Without the third nullReplacement argument, NULL elements are dropped silently, with no empty slot or doubled delimiter. Positional meaning is lost.",
+      "example_sql": "SELECT array_join(array('a', NULL, 'b'), ',')",
+      "expected": "a,b",
+      "actual": "a,b",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "array_max",
+      "trap": "NaN counts as greater than every non-NaN double or float, so a single NaN makes it the maximum. NULL elements are skipped.",
+      "example_sql": "SELECT array_max(array(1.0D, CAST('NaN' AS DOUBLE), 3.0D))",
+      "expected": "NaN",
+      "actual": "NaN",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "arrays_overlap",
+      "trap": "If there is no common non-null element, both arrays are non-empty and either one contains a NULL, the result is NULL instead of false.",
+      "example_sql": "SELECT arrays_overlap(array(1, NULL), array(2))",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "array_remove",
+      "trap": "It cannot remove NULLs. Passing NULL as the element makes the whole result NULL. Use `array_compact(...)` to drop NULL elements.",
+      "example_sql": "SELECT array_remove(array(1, NULL, 2), NULL)",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "array_except",
+      "trap": "The result is set-like: duplicates in the first array are removed even when they do not appear in the second array.",
+      "example_sql": "SELECT array_except(array(1, 1, 2), array(3))",
+      "expected": "[1, 2]",
+      "actual": "[1, 2]",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "sequence",
+      "trap": "Stop is inclusive. With no step, the step defaults to -1 when start > stop, so a reversed range gives a descending array rather than an empty one.",
+      "example_sql": "SELECT sequence(5, 1)",
+      "expected": "[5, 4, 3, 2, 1]",
+      "actual": "[5, 4, 3, 2, 1]",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "flatten",
+      "trap": "If any inner array is NULL, the whole result is NULL. The NULL inner array is not skipped.",
+      "example_sql": "SELECT flatten(array(array(1), NULL))",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "arrays_zip",
+      "trap": "Arrays of different lengths are not truncated to the shortest. The result has the length of the longest array, and missing fields are filled with NULL.",
+      "example_sql": "SELECT size(arrays_zip(array(1, 2, 3), array('a')))",
+      "expected": "3",
+      "actual": "3",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "array",
+      "trap": "With ANSI off, mixed element types are coerced to a common wider type. A number mixed with a string silently produces an array of strings.",
+      "example_sql": "SELECT typeof(array(1, 'a'))",
+      "expected": "array<string>",
+      "actual": "array<string>",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "array_repeat",
+      "trap": "A negative count returns an empty array, not an error. A NULL count returns NULL.",
+      "example_sql": "SELECT size(array_repeat('x', -1))",
+      "expected": "0",
+      "actual": "0",
+      "verified": true,
+      "in_part": true
+    }
+  ]
+}

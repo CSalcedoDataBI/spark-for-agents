@@ -1,0 +1,112 @@
+{
+  "notes": [
+    {
+      "function": "<=>",
+      "trap": "`<=>` is null-safe equality. It never returns NULL: two NULLs compare as true, and one NULL compares as false. Plain `=` returns NULL in both cases, so a join or filter that must match NULL keys needs `<=>` (or `equal_null(...)`).",
+      "example_sql": "SELECT NULL <=> NULL",
+      "expected": "true",
+      "actual": "true",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "=",
+      "trap": "Spark treats NaN as equal to NaN, which differs from IEEE semantics and from many other engines. Comparing a NaN double with itself returns true, while comparing NULL with NULL returns NULL.",
+      "example_sql": "SELECT CAST('NaN' AS DOUBLE) = CAST('NaN' AS DOUBLE)",
+      "expected": "true",
+      "actual": "true",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": ">",
+      "trap": "In Spark, NaN sorts and compares as larger than every other floating-point value, including Infinity. A filter like `x > threshold` therefore keeps NaN rows instead of dropping them.",
+      "example_sql": "SELECT CAST('NaN' AS DOUBLE) > CAST('Infinity' AS DOUBLE)",
+      "expected": "true",
+      "actual": "true",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "<",
+      "trap": "When both sides are strings, the comparison is lexicographic, not numeric. Numbers stored as strings compare unexpectedly unless you cast them first.",
+      "example_sql": "SELECT '10' < '9'",
+      "expected": "true",
+      "actual": "true",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "in",
+      "trap": "`IN` uses three-valued logic. If the value is not found and the list contains a NULL, the result is NULL rather than false. As a result, `NOT IN` against a list or subquery containing NULL filters out every row.",
+      "example_sql": "SELECT 1 NOT IN (2, NULL)",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "and",
+      "trap": "`AND` with NULL is not always NULL. If either side is false, the result is false regardless of the NULL; it is NULL only when the other side is true or NULL.",
+      "example_sql": "SELECT NULL AND false",
+      "expected": "false",
+      "actual": "false",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "or",
+      "trap": "`OR` with NULL returns true when the other side is true. It returns NULL only when the other side is false or NULL.",
+      "example_sql": "SELECT NULL OR true",
+      "expected": "true",
+      "actual": "true",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "isnan",
+      "trap": "`isnan(...)` returns false, not NULL, for a NULL input. So NULL is not caught by a NaN check; combine it with `isnull(...)` or use `nanvl(...)`/`coalesce(...)` as appropriate.",
+      "example_sql": "SELECT isnan(CAST(NULL AS DOUBLE))",
+      "expected": "false",
+      "actual": "false",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "isnull",
+      "trap": "In Spark, `isnull(...)` is a one-argument predicate. It is not SQL Server's two-argument ISNULL(a, b) replacement function; for that, use `ifnull(...)`, `nvl(...)` or `coalesce(...)`. Calling it with two arguments fails analysis.",
+      "example_sql": "SELECT isnull(NULL, 1)",
+      "expected": "ERROR: AnalysisException",
+      "actual": "ERROR: AnalysisException WRONG_NUM_ARGS.WITHOUT_SUGGESTION :: [WRONG_NUM_ARGS.WITHOUT_SUGGESTION] The `isnull` requires 1 parameters but the actual number is 2. Please, refer to 'https://spark.apache.org/docs/latest/sql-ref-functions.html' for a fix.; line 1 pos 7",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "rlike",
+      "trap": "`rlike(...)` (and its aliases `regexp(...)` and `regexp_like(...)`) succeeds if the Java regex matches anywhere in the string; it does not have to match the whole string. Anchor with ^ and $ for a full match, unlike `like(...)`, which must match the entire string.",
+      "example_sql": "SELECT 'abc' RLIKE 'b'",
+      "expected": "true",
+      "actual": "true",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "regexp_like",
+      "trap": "Matching is a substring search, so anchors are honoured literally. '^b' does not match 'abc' even though 'b' alone would. Backslashes in the pattern must also be doubled, because SQL string literals are unescaped first.",
+      "example_sql": "SELECT regexp_like('abc', '^b')",
+      "expected": "false",
+      "actual": "false",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "like",
+      "trap": "`LIKE` is case-sensitive in Spark, unlike the default collations of MySQL or SQL Server. Use `ilike(...)` or `lower(...)` for case-insensitive matching. The pattern must also match the whole string.",
+      "example_sql": "SELECT 'Spark' LIKE 'spark'",
+      "expected": "false",
+      "actual": "false",
+      "verified": true,
+      "in_part": true
+    }
+  ]
+}

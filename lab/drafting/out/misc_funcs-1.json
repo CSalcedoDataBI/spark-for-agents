@@ -1,0 +1,103 @@
+{
+  "notes": [
+    {
+      "function": "aes_decrypt",
+      "trap": "The result is BINARY, not STRING, even though the documented examples print readable text. Wrap the call in `cast(...)` AS STRING before comparing it with strings. The documented key sizes of 16, 24 and 32 are bytes, not bits.",
+      "example_sql": "SELECT typeof(aes_decrypt(unbase64('3lmwu+Mw0H3fi5NDvcu9lg=='), '1234567890abcdef', 'ECB', 'PKCS'))",
+      "expected": "binary",
+      "actual": "binary",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "aes_encrypt",
+      "trap": "The default mode is GCM. With no IV, a random 12-byte IV is generated and prepended to the output, so results are non-deterministic and longer than the input: 12-byte IV + ciphertext + 16-byte tag. Only ECB, or an explicit IV, gives repeatable output.",
+      "example_sql": "SELECT length(aes_encrypt('Spark', '0000111122223333'))",
+      "expected": "33",
+      "actual": "33",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "assert_true",
+      "trap": "On success it returns NULL (type void), not true. A NULL argument counts as 'not true' and throws.",
+      "example_sql": "SELECT assert_true(1 < 2)",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "bitmap_bit_position",
+      "trap": "Positive values are 1-based within 32768-bit buckets: position is (value - 1) % 32768. So 1 and 32769 both map to bit 0, and 0 also maps to bit 0. Always pair it with `bitmap_bucket_number(...)`.",
+      "example_sql": "SELECT bitmap_bit_position(32769)",
+      "expected": "0",
+      "actual": "0",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "bitmap_bucket_number",
+      "trap": "Buckets for positive values start at 1, not 0: bucket is (value - 1) / 32768 + 1. So 32768 is still bucket 1, 32769 is bucket 2, and 0 is bucket 0.",
+      "example_sql": "SELECT bitmap_bucket_number(32769)",
+      "expected": "2",
+      "actual": "2",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "equal_null",
+      "trap": "Unlike `=`, it never returns NULL: two NULLs compare as true, and one NULL gives false. It behaves the same as the `<=>` operator.",
+      "example_sql": "SELECT equal_null(NULL, NULL)",
+      "expected": "true",
+      "actual": "true",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "hll_union",
+      "trap": "By default, allowDifferentLgConfigK is false. Merging sketches built with different lgConfigK values fails at runtime instead of downsampling; pass true as the third argument to allow it.",
+      "example_sql": "SELECT hll_sketch_estimate(hll_union(hll_sketch_agg(col, 12), hll_sketch_agg(col, 10))) FROM VALUES (1) tab(col)",
+      "expected": "ERROR: HLL_UNION_DIFFERENT_LG_K",
+      "actual": "ERROR: Py4JJavaError :: : org.apache.spark.SparkException: Job aborted due to stage failure: Task 0 in stage 306.0 failed 1 times, most recent failure: Lost task 0.0 in stage 306.0 (TID 256) (DESKTOP-IDCJBHU executor driver): org.apache.spark.SparkRuntimeException: [HLL_UNION_DIFFERENT_LG_K] Sketches have different `lgConf",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "input_file_name",
+      "trap": "When no file is being read (literals, VALUES, or after shuffles), it returns an empty string, not NULL. Checks with `isnull(...)` therefore never fire.",
+      "example_sql": "SELECT length(input_file_name())",
+      "expected": "0",
+      "actual": "0",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "reflect",
+      "trap": "The result is always STRING (String.valueOf of the Java return value), whatever the Java method returns. Only static methods can be called, and argument types must exactly match a Java overload.",
+      "example_sql": "SELECT typeof(reflect('java.lang.Math', 'max', 2, 3))",
+      "expected": "string",
+      "actual": "string",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "raise_error",
+      "trap": "Its return type is NULL (void), so it fits in any CASE or `if(...)` branch. It only throws if that branch is actually evaluated. In 3.5 the error is a plain java.lang.RuntimeException carrying the message.",
+      "example_sql": "SELECT CASE WHEN 1 > 0 THEN 'ok' ELSE raise_error('bad') END",
+      "expected": "ok",
+      "actual": "ok",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "try_aes_decrypt",
+      "trap": "A wrong key or corrupted input returns NULL instead of an error. This can silently hide key mistakes; `aes_decrypt(...)` would raise an error instead.",
+      "example_sql": "SELECT try_aes_decrypt(unhex('6E7CA17BBB468D3084B5744BCA729FB7B2B7BCB8E4472847D02670489D95FA97DBBA7D3210'), '0000111122223334', 'GCM')",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    }
+  ]
+}

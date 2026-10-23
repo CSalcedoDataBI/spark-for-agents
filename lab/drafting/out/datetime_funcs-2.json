@@ -1,0 +1,103 @@
+{
+  "notes": [
+    {
+      "function": "make_date",
+      "trap": "With ANSI mode off (the default), an impossible date such as February 30 returns NULL silently instead of raising an error. Out-of-range fields are treated the same way.",
+      "example_sql": "SELECT make_date(2023, 2, 30)",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "months_between",
+      "trap": "If both dates are the last day of their months, the result is a whole number even when the day numbers differ. In every other case the fraction assumes 31-day months and is rounded to 8 digits. The result is a DOUBLE.",
+      "example_sql": "SELECT months_between('2024-02-29', '2024-01-31')",
+      "expected": "1.0",
+      "actual": "1.0",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "next_day",
+      "trap": "The result is always strictly later than `start_date`. If the start date already falls on the requested weekday, you get the date one week later, not the same day. An unrecognised day name returns NULL when ANSI mode is off.",
+      "example_sql": "SELECT next_day('2015-01-20', 'TU')",
+      "expected": "2015-01-27",
+      "actual": "2015-01-27",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "make_timestamp",
+      "trap": "The optional timezone argument only says how to read the fields. The result is a session-time-zone TIMESTAMP, so it prints converted to UTC here. It does not print the wall-clock time you passed in.",
+      "example_sql": "SELECT make_timestamp(2014, 12, 28, 6, 30, 45.887, 'CET')",
+      "expected": "2014-12-28 05:30:45.887",
+      "actual": "2014-12-28 05:30:45.887",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "from_utc_timestamp",
+      "trap": "The result is a plain TIMESTAMP whose wall-clock value has been shifted from UTC to the given zone; no zone information is attached. It is easy to confuse the direction with `to_utc_timestamp(...)`.",
+      "example_sql": "SELECT from_utc_timestamp(TIMESTAMP'2024-01-01 00:00:00', 'America/New_York')",
+      "expected": "2023-12-31 19:00:00",
+      "actual": "2023-12-31 19:00:00",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "make_interval",
+      "trap": "The positional order is years, months, weeks, days, so a three-argument call sets weeks, not days. Weeks are folded into the days field of the resulting CalendarInterval.",
+      "example_sql": "SELECT make_interval(0, 0, 3)",
+      "expected": "21 days",
+      "actual": "21 days",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "make_ym_interval",
+      "trap": "Years and months are combined and normalised into one signed interval, so (-1, 1) becomes minus eleven months. Casting the result to STRING gives the ANSI literal form, not the short '-0-11' shown in the docs.",
+      "example_sql": "SELECT CAST(make_ym_interval(-1, 1) AS STRING)",
+      "expected": "INTERVAL '-0-11' YEAR TO MONTH",
+      "actual": "INTERVAL '-0-11' YEAR TO MONTH",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "second",
+      "trap": "The function returns an INT, so fractional seconds are dropped rather than rounded. Use `extract(...)` or `date_part(...)` with SECOND if you need the fractional part.",
+      "example_sql": "SELECT second('2009-07-30 12:58:59.999')",
+      "expected": "59",
+      "actual": "59",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "last_day",
+      "trap": "It returns a DATE, not an end-of-day timestamp. Comparing a TIMESTAMP against it promotes the date to midnight, so `ts <= last_day(...)` excludes any time after 00:00 on the last day.",
+      "example_sql": "SELECT CAST('2024-02-29 12:00:00' AS TIMESTAMP) <= last_day('2024-02-10')",
+      "expected": "false",
+      "actual": "false",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "localtimestamp",
+      "trap": "Unlike `now(...)` and `current_timestamp(...)`, which return TIMESTAMP (local time zone), this returns TIMESTAMP_NTZ. Mixing the two types changes time-zone semantics.",
+      "example_sql": "SELECT typeof(localtimestamp())",
+      "expected": "timestamp_ntz",
+      "actual": "timestamp_ntz",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "session_window",
+      "trap": "The session end is the last event's time plus the gap, not the last event's time. Events closer together than the gap merge into one session.",
+      "example_sql": "SELECT session_window.end FROM VALUES ('2021-01-01 00:00:00'), ('2021-01-01 00:04:30') AS tab(b) GROUP BY session_window(b, '5 minutes')",
+      "expected": "2021-01-01 00:09:30",
+      "actual": "2021-01-01 00:09:30",
+      "verified": true,
+      "in_part": true
+    }
+  ]
+}

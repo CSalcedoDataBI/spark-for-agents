@@ -1,0 +1,175 @@
+{
+  "notes": [
+    {
+      "function": "length",
+      "trap": "`length(...)` counts characters, not bytes, and trailing spaces are counted. SQL Server's LEN ignores trailing spaces; Spark does not. Use `octet_length(...)` for the byte count.",
+      "example_sql": "SELECT length('ab  ')",
+      "expected": "4",
+      "actual": "4",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "octet_length",
+      "trap": "Returns the UTF-8 byte count of a string, which differs from `length(...)` for any non-ASCII character.",
+      "example_sql": "SELECT octet_length('é')",
+      "expected": "2",
+      "actual": "2",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "levenshtein",
+      "trap": "When the optional threshold argument is given and the distance exceeds it, the result is -1, not NULL and not the threshold. Comparison is case-sensitive.",
+      "example_sql": "SELECT levenshtein('abc', 'abd', 0)",
+      "expected": "-1",
+      "actual": "-1",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "locate",
+      "trap": "Argument order is (substr, str), the reverse of `instr(...)`. A start position below 1 returns 0 rather than searching from the beginning. A NULL start position also returns 0, not NULL.",
+      "example_sql": "SELECT locate('a', 'abc', 0)",
+      "expected": "0",
+      "actual": "0",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "position",
+      "trap": "The function form is position(substr, str), the reverse of `instr(str, substr)`. Swapping the arguments silently searches for the wrong thing and usually returns 0. The SQL-standard form is POSITION(substr IN str).",
+      "example_sql": "SELECT position('abc', 'b')",
+      "expected": "0",
+      "actual": "0",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "lpad",
+      "trap": "If the string is already longer than len, `lpad(...)` truncates it to len characters, keeping the leftmost characters. It does not return the string unchanged and does not keep the rightmost characters.",
+      "example_sql": "SELECT lpad('12345', 3, '0')",
+      "expected": "123",
+      "actual": "123",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "rpad",
+      "trap": "An empty pad string performs no padding, so the input comes back unchanged and shorter than len. A len shorter than the input truncates it.",
+      "example_sql": "SELECT rpad('hi', 5, '')",
+      "expected": "hi",
+      "actual": "hi",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "ltrim",
+      "trap": "The one-argument form removes only the space character (0x20). Tabs, newlines and other whitespace are kept.",
+      "example_sql": "SELECT length(ltrim(concat(chr(9), 'abc')))",
+      "expected": "4",
+      "actual": "4",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "luhn_check",
+      "trap": "Any non-digit character, including the dashes or spaces common in formatted card numbers, makes the result false. It does not raise an error and does not ignore those characters.",
+      "example_sql": "SELECT luhn_check('7992-7398-713')",
+      "expected": "false",
+      "actual": "false",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "mask",
+      "trap": "By default only letters and digits are masked; otherChar defaults to NULL, so spaces and punctuation are kept as-is. Digits become 'n', not 'X'.",
+      "example_sql": "SELECT mask('John Doe 42')",
+      "expected": "Xxxx Xxx nn",
+      "actual": "Xxxx Xxx nn",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "overlay",
+      "trap": "When FOR len is omitted, the number of characters replaced equals the length of the replacement string, not the rest of the input.",
+      "example_sql": "SELECT overlay('abcdef' PLACING 'X' FROM 2)",
+      "expected": "aXcdef",
+      "actual": "aXcdef",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "printf",
+      "trap": "A NULL argument does not make the result NULL. Java's formatter prints it as the text 'null'.",
+      "example_sql": "SELECT printf('value=%s', CAST(NULL AS STRING))",
+      "expected": "value=null",
+      "actual": "value=null",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "regexp_count",
+      "trap": "Counts non-overlapping matches only. After a match, scanning resumes after the end of that match.",
+      "example_sql": "SELECT regexp_count('aaaa', 'aa')",
+      "expected": "2",
+      "actual": "2",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "regexp_extract",
+      "trap": "When nothing matches, the result is an empty string, not NULL. The default idx is 1, so a pattern with no capture group fails unless you pass idx 0.",
+      "example_sql": "SELECT regexp_extract('abc', '([0-9]+)', 1) IS NULL",
+      "expected": "false",
+      "actual": "false",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "regexp_extract_all",
+      "trap": "The default idx is 1, so the pattern needs a capture group, otherwise pass 0. No match yields an empty array rather than NULL.",
+      "example_sql": "SELECT CAST(regexp_extract_all('a1b22', '([0-9]+)') AS STRING)",
+      "expected": "[1, 22]",
+      "actual": "[1, 22]",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "regexp_replace",
+      "trap": "The replacement string uses Java regex syntax: $1, $2 refer to capture groups. A literal dollar sign or backslash in rep must be escaped.",
+      "example_sql": "SELECT regexp_replace('100-200', '([0-9]+)-([0-9]+)', '$2-$1')",
+      "expected": "200-100",
+      "actual": "200-100",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "regexp_substr",
+      "trap": "Unlike `regexp_extract(...)`, which returns an empty string on no match, `regexp_substr(...)` returns NULL when the pattern is not found.",
+      "example_sql": "SELECT regexp_substr('abc', '[0-9]+')",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "repeat",
+      "trap": "A zero or negative count returns an empty string rather than NULL or an error.",
+      "example_sql": "SELECT length(repeat('ab', -1))",
+      "expected": "0",
+      "actual": "0",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "replace",
+      "trap": "`replace(...)` matches search literally (no regex) and case-sensitively. With only two arguments it deletes every occurrence of search.",
+      "example_sql": "SELECT replace('a.b.c', '.')",
+      "expected": "abc",
+      "actual": "abc",
+      "verified": true,
+      "in_part": true
+    }
+  ]
+}

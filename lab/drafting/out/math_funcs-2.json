@@ -1,0 +1,112 @@
+{
+  "notes": [
+    {
+      "function": "pmod",
+      "trap": "`pmod(...)` is only guaranteed non-negative when the divisor is positive. With a negative divisor it can still return a negative value, because Spark computes r = a % n and, if r < 0, returns (r + n) % n.",
+      "example_sql": "SELECT pmod(-7, -3)",
+      "expected": "-1",
+      "actual": "-1",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "mod",
+      "trap": "`mod(...)` and `%` return a remainder with the sign of the dividend, unlike mathematical modulo. A zero divisor returns NULL instead of raising an error, because ANSI mode is off by default.",
+      "example_sql": "SELECT -7 % 3",
+      "expected": "-1",
+      "actual": "-1",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "div",
+      "trap": "`div` truncates toward zero, not toward negative infinity, and always returns BIGINT. A zero divisor gives NULL rather than an error when ANSI mode is off.",
+      "example_sql": "SELECT -7 div 2",
+      "expected": "-3",
+      "actual": "-3",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "ln",
+      "trap": "Spark's `ln(...)` returns NULL for zero and negative inputs instead of -Infinity or NaN, as Java or other engines would. The logarithm functions `log10(...)` and `log2(...)` behave the same way.",
+      "example_sql": "SELECT ln(0)",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "log",
+      "trap": "The two-argument form takes the base FIRST: `log(base, expr)`. Some engines put the base second, or treat single-argument log as base 10, whereas Spark's one-argument `log(...)` is the natural log. A non-positive base or value returns NULL, not an error.",
+      "example_sql": "SELECT log(10, -100)",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "log1p",
+      "trap": "`log1p(...)` returns NULL, not -Infinity, when the input is less than or equal to -1.",
+      "example_sql": "SELECT log1p(-1)",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "factorial",
+      "trap": "`factorial(...)` only supports inputs 0..20, the range that fits in a BIGINT. Anything outside that range, including negatives, silently returns NULL rather than an error or a decimal result.",
+      "example_sql": "SELECT factorial(21)",
+      "expected": "NULL",
+      "actual": "NULL",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "floor",
+      "trap": "For DOUBLE or FLOAT input, single-argument `floor(...)` returns BIGINT, not a floating type. Decimal input returns a DECIMAL instead, so the result type depends on the input type.",
+      "example_sql": "SELECT typeof(floor(2.7D))",
+      "expected": "bigint",
+      "actual": "bigint",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "greatest",
+      "trap": "`greatest(...)` and `least(...)` skip NULL arguments and return NULL only if every argument is NULL. Engines such as MySQL or Oracle instead return NULL as soon as any argument is NULL.",
+      "example_sql": "SELECT greatest(1, NULL, 3)",
+      "expected": "3",
+      "actual": "3",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "hex",
+      "trap": "For integral input, `hex(...)` formats the value as a 64-bit two's-complement long, so negative numbers produce 16 hex digits instead of a minus sign. For string input it hex-encodes the UTF-8 bytes rather than parsing a number.",
+      "example_sql": "SELECT hex(-1)",
+      "expected": "FFFFFFFFFFFFFFFF",
+      "actual": "FFFFFFFFFFFFFFFF",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "negative",
+      "trap": "With ANSI mode off, `negative(...)` silently overflows for the minimum value of an integral type and returns the same minimum value instead of raising an error.",
+      "example_sql": "SELECT negative(CAST(-2147483648 AS INT))",
+      "expected": "-2147483648",
+      "actual": "-2147483648",
+      "verified": true,
+      "in_part": true
+    },
+    {
+      "function": "csc",
+      "trap": "`csc(...)` is computed as 1/sin(x) in double arithmetic, so csc(0) returns Infinity instead of NULL or an error.",
+      "example_sql": "SELECT csc(0)",
+      "expected": "Infinity",
+      "actual": "Infinity",
+      "verified": true,
+      "in_part": true
+    }
+  ]
+}

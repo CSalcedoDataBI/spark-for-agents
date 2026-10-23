@@ -1,0 +1,13 @@
+{
+  "notes": [
+    {
+      "function": "width_bucket",
+      "trap": "The upper bound is exclusive. A value equal to `max_value` returns `num_bucket + 1`, not `num_bucket`, and values below the range return 0. With ANSI off, a non-positive `num_bucket` or `min_value = max_value` returns NULL instead of raising an error.",
+      "example_sql": "SELECT width_bucket(10, 0, 10, 5)",
+      "expected": "6",
+      "actual": "6",
+      "verified": true,
+      "in_part": true
+    }
+  ]
+}
