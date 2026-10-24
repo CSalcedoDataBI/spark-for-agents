@@ -1,0 +1,216 @@
+{
+  "model": "claude-haiku-5-5",
+  "provider": "anthropic",
+  "records": [
+    {
+      "id": "conditional-column",
+      "regime": "core",
+      "category": "functions",
+      "question": "In PySpark, how do I add a column that is \"high\" when amount > 100 and \"low\" otherwise? Name the functions and show a short snippet.",
+      "A": {
+        "text": "Use `F.when` with `F.otherwise`:\n\n```python\nfrom pyspark.sql import functions as F\n\ndf = df.withColumn(\n    \"level\",\n    F.when(F.col(\"amount\") > 100, \"high\").otherwise(\"low\")\n)\n```\n\n`F.when(condition, value)` builds the conditional expression, and `.otherwise(value)` supplies the fallback for rows where the condition is false or null. Without `.otherwise`, those rows would get `null`.",
+        "stop_reason": "end_turn"
+      },
+      "B": {
+        "text": "Use `F.when` with `.otherwise` inside `withColumn`:\n\n```python\nfrom pyspark.sql import functions as F\n\ndf = df.withColumn(\n    \"amount_category\",\n    F.when(F.col(\"amount\") > 100, \"high\").otherwise(\"low\")\n)\n```\n\n`F.when` evaluates the condition on `amount`, and `.otherwise(\"low\")` supplies the value for every row that doesn't match. In Spark SQL, the equivalent is `CASE WHEN amount > 100 THEN 'high' ELSE 'low' END`.",
+        "stop_reason": "end_turn"
+      }
+    },
+    {
+      "id": "coalesce-nulls",
+      "regime": "core",
+      "category": "functions",
+      "question": "In PySpark, how do I return the first non-null among three columns a, b, c into one column? Name the function and show it.",
+      "A": {
+        "text": "Use `F.coalesce`, which returns the first non-null value among its arguments:\n\n```python\nfrom pyspark.sql import functions as F\n\ndf = df.withColumn(\"first_non_null\", F.coalesce(F.col(\"a\"), F.col(\"b\"), F.col(\"c\")))\n```\n\nIn Spark SQL, the equivalent is:\n\n```python\ndf.createOrReplaceTempView(\"t\")\nspark.sql(\"SELECT *, coalesce(a, b, c) AS first_non_null FROM t\")\n```\n\nIf all three are null, the result is null.",
+        "stop_reason": "end_turn"
+      },
+      "B": {
+        "text": "Use `F.coalesce`, which returns the first non-null column among its arguments:\n\n```python\nfrom pyspark.sql import functions as F\n\ndf = df.withColumn(\"first_non_null\", F.coalesce(F.col(\"a\"), F.col(\"b\"), F.col(\"c\")))\n```\n\nIf all three are null, the result is null. Plain column names also work (`F.coalesce(\"a\", \"b\", \"c\")`).",
+        "stop_reason": "end_turn"
+      }
+    },
+    {
+      "id": "string-concat",
+      "regime": "core",
+      "category": "functions",
+      "question": "In PySpark, how do I concatenate two string columns with a \"-\" separator between them? Name the function and show it.",
+      "A": {
+        "text": "Use `F.concat_ws`, which joins columns with a separator and skips nulls:\n\n```python\nfrom pyspark.sql import functions as F\n\ndf = df.withColumn(\"combined\", F.concat_ws(\"-\", F.col(\"first_name\"), F.col(\"last_name\")))\n```\n\nOr in Spark SQL:\n\n```python\ndf.createOrReplaceTempView(\"people\")\nspark.sql(\"SELECT concat_ws('-', first_name, last_name) AS combined FROM people\")\n```\n\nIf you want the result to be null whenever either column is null, use `F.concat` with explicit separators instead: `F.concat(F.col(\"first_name\"), F.lit(\"-\"), F.col(\"last_name\"))`.",
+        "stop_reason": "end_turn"
+      },
+      "B": {
+        "text": "Use `F.concat_ws`, which joins string columns with the given separator as its first argument:\n\n```python\nfrom pyspark.sql import functions as F\n\ndf = df.withColumn(\"combined\", F.concat_ws(\"-\", F.col(\"first_col\"), F.col(\"second_col\")))\n```\n\nFor example, `(\"abc\", \"def\")` becomes `\"abc-def\"`. Note that `concat_ws` skips null inputs, so `(\"abc\", None)` gives `\"abc\"` rather than null.",
+        "stop_reason": "end_turn"
+      }
+    },
+    {
+      "id": "to-date-parse",
+      "regime": "core",
+      "category": "functions",
+      "question": "In PySpark, how do I parse a string column \"2024-03-15\" into a date, and separately format a date column as \"yyyy/MM\"? Name the functions and show them.",
+      "A": {
+        "text": "Use `F.to_date` to parse and `F.date_format` to format.\n\n```python\nfrom pyspark.sql import SparkSession, functions as F\n\nspark = SparkSession.builder.getOrCreate()\ndf = spark.createDataFrame([(\"2024-03-15\",)], [\"date_str\"])\n\n# Parse string -> date (default pattern is yyyy-MM-dd, so no format needed here)\ndf = df.withColumn(\"date_col\", F.to_date(\"date_str\"))\n\n# If the format were different, pass it explicitly, e.g. F.to_date(\"date_str\", \"yyyy-MM-dd\")\n\n# Format date -> \"yyyy/MM\"\ndf = df.withColumn(\"year_month\", F.date_format(\"date_col\", \"yyyy/MM\"))\n\ndf.show()\n# +----------+----------+----------+\n# |  date_str| date_col |year_month|\n# +----------+----------+----------+\n# |2024-03-15|2024-03-15|   2024/03|\n# +----------+----------+----------+\n```\n\nOr in Spark SQL:\n\n```sql\nSELECT to_date('2024-03-15') AS date_col,\n       date_format(to_date('2024-03-15'), 'yyyy/MM') AS year_month\n```",
+        "stop_reason": "end_turn"
+      },
+      "B": {
+        "text": "Use `F.to_date` to parse the string and `F.date_format` to format the date.\n\n```python\nfrom pyspark.sql import functions as F\n\ndf = spark.createDataFrame([(\"2024-03-15\",)], [\"s\"])\n\ndf = (\n    df\n    .withColumn(\"d\", F.to_date(\"s\", \"yyyy-MM-dd\"))   # string -> DateType\n    .withColumn(\"ym\", F.date_format(\"d\", \"yyyy/MM\"))  # date -> \"2024/03\"\n)\ndf.show()\n# +----------+----------+-------+\n# |         s|         d|     ym|\n# +----------+----------+-------+\n# |2024-03-15|2024-03-15|2024/03|\n# +----------+----------+-------+\n```\n\n`F.to_date(\"s\")` also works without a format, since the default pattern is `yyyy-MM-dd`. The same logic in Spark SQL:\n\n```sql\nSELECT to_date('2024-03-15', 'yyyy-MM-dd') AS d,\n       date_format(to_date('2024-03-15', 'yyyy-MM-dd'), 'yyyy/MM') AS ym\n```",
+        "stop_reason": "end_turn"
+      }
+    },
+    {
+      "id": "substring-extract",
+      "regime": "core",
+      "category": "functions",
+      "question": "In PySpark, how do I take characters 2 through 5 of a string column, and separately the part after the last \"/\"? Name the functions and show them.",
+      "A": {
+        "text": "Use `F.substring` for characters 2 through 5, and `F.substring_index` with a count of `-1` for the text after the last `/`.\n\n```python\nfrom pyspark.sql import functions as F\n\ndf = spark.createDataFrame([(\"abcdefgh/foo/bar.csv\",)], [\"s\"])\n\ndf = (\n    df\n    # substring is 1-based: start at 2, length 4 -> chars 2..5\n    .withColumn(\"chars_2_to_5\", F.substring(\"s\", 2, 4))\n    # count=-1 returns everything after the last delimiter\n    .withColumn(\"after_last_slash\", F.substring_index(\"s\", \"/\", -1))\n)\n\ndf.show(truncate=False)\n# chars_2_to_5 = \"bcde\", after_last_slash = \"bar.csv\"\n```\n\nBoth functions also accept column expressions for the position and length, if those vary per row.",
+        "stop_reason": "end_turn"
+      },
+      "B": {
+        "text": "Use `F.substring` for characters 2 through 5, and `F.substring_index` with a negative count for the part after the last `/`.\n\n```python\nfrom pyspark.sql import functions as F\n\ndf = spark.createDataFrame([(\"abcdefgh/images/cat.png\",)], [\"s\"])\n\ndf.select(\n    # Spark positions are 1-based: start at 2, length 4 -> chars 2..5\n    F.substring(\"s\", 2, 4).alias(\"chars_2_to_5\"),\n    # Negative count returns everything after the last \"/\"\n    F.substring_index(\"s\", \"/\", -1).alias(\"after_last_slash\"),\n).show(truncate=False)\n# +-------------+-----------------+\n# |chars_2_to_5 |after_last_slash |\n# +-------------+-----------------+\n# |bcde         |cat.png          |\n# +-------------+-----------------+\n```",
+        "stop_reason": "end_turn"
+      }
+    },
+    {
+      "id": "round-agg",
+      "regime": "core",
+      "category": "functions",
+      "question": "In PySpark, how do I compute the average of a column per group, rounded to 2 decimals? Name the functions and show the aggregation.",
+      "A": {
+        "text": "Use `F.avg` inside `groupBy().agg()`, then wrap it in `F.round` with scale 2:\n\n```python\nfrom pyspark.sql import functions as F\n\nresult = (\n    df.groupBy(\"group_col\")\n      .agg(F.round(F.avg(\"value_col\"), 2).alias(\"avg_value\"))\n)\nresult.show()\n```\n\nEquivalent in Spark SQL:\n\n```python\ndf.createOrReplaceTempView(\"t\")\nresult = spark.sql(\"\"\"\n    SELECT group_col, ROUND(AVG(value_col), 2) AS avg_value\n    FROM t\n    GROUP BY group_col\n\"\"\")\n```\n\n`F.avg` ignores nulls, and `F.round(..., 2)` rounds the result to two decimal places. Use `F.bround` if you need banker's rounding (HALF_EVEN) instead of the default HALF_UP.",
+        "stop_reason": "end_turn"
+      },
+      "B": {
+        "text": "Use `F.avg` inside `groupBy().agg()`, and wrap it in `F.round(..., 2)`. Rounding happens after the average is computed, so the result is rounded once.\n\n```python\nfrom pyspark.sql import functions as F\n\nresult = (\n    df.groupBy(\"group_col\")\n      .agg(F.round(F.avg(\"value\"), 2).alias(\"avg_value\"))\n)\n```\n\nOr in Spark SQL:\n\n```python\ndf.createOrReplaceTempView(\"t\")\nspark.sql(\"\"\"\n    SELECT group_col, round(avg(value), 2) AS avg_value\n    FROM t\n    GROUP BY group_col\n\"\"\")\n```\n\n`F.avg` ignores nulls. `F.round` uses HALF_UP rounding.",
+        "stop_reason": "end_turn"
+      }
+    },
+    {
+      "id": "regexp-group",
+      "regime": "deep",
+      "category": "functions",
+      "question": "In PySpark, I have codes like \"INV-2024-0042\". How do I extract the middle number with a regex capture group? Name the function and show it.",
+      "A": {
+        "text": "Use `F.regexp_extract` with a capture group. For \"INV-2024-0042\", the middle part is \"2024\", so the pattern is `^INV-(\\d{4})-\\d+$` with group index 1:\n\n```python\nfrom pyspark.sql import SparkSession, functions as F\n\nspark = SparkSession.builder.getOrCreate()\n\ndf = spark.createDataFrame([(\"INV-2024-0042\",), (\"INV-2023-0007\",)], [\"code\"])\n\ndf = df.withColumn(\"year\", F.regexp_extract(\"code\", r\"^INV-(\\d{4})-\\d+$\", 1))\ndf.show()\n# +--------------+----+\n# |          code|year|\n# +--------------+----+\n# |INV-2024-0042|2024|\n# |INV-2023-0007|2023|\n# +--------------+----+\n```\n\n`regexp_extract(col, pattern, idx)` returns the text matched by group `idx` (1 is the first group). If nothing matches, it returns an empty string, so check for that if the input can be malformed.",
+        "stop_reason": "end_turn"
+      },
+      "B": {
+        "text": "Use `F.regexp_extract(col, pattern, idx)`. The index selects the capture group, so `1` returns the first group.\n\n```python\nfrom pyspark.sql import functions as F\n\ndf = spark.createDataFrame([(\"INV-2024-0042\",)], [\"code\"])\n\ndf = df.withColumn(\n    \"middle\",\n    F.regexp_extract(\"code\", r\"^INV-(\\d+)-\\d+$\", 1)\n)\ndf.show()\n# +-------------+------+\n# |         code|middle|\n# +-------------+------+\n# |INV-2024-0042|  2024|\n# +-------------+------+\n```\n\nThe result is a string. If you need a number, wrap it in `.cast(\"int\")`. If you meant the last segment (`0042`), change the index to `2`.",
+        "stop_reason": "end_turn"
+      }
+    },
+    {
+      "id": "array-membership",
+      "regime": "deep",
+      "category": "functions",
+      "question": "In PySpark, how do I check whether an array column contains the value 7, and separately get the element at position 2 (1-based)? Name the functions and show them.",
+      "A": {
+        "text": "Use `F.array_contains` for the membership check and `F.element_at` for the 1-based lookup.\n\n```python\nfrom pyspark.sql import functions as F\n\ndf = spark.createDataFrame([([5, 7, 9],), ([1, 2, 3],)], [\"arr\"])\n\ndf.select(\n    F.array_contains(\"arr\", 7).alias(\"has_7\"),   # true / false\n    F.element_at(\"arr\", 2).alias(\"second_elem\")  # 1-based: 7, 2\n).show()\n```\n\n`element_at` is 1-based for arrays, so position 2 is the second element. Don't use `arr[2]` for this, because bracket indexing is 0-based and would return the third element. `element_at` also accepts negative indices to count from the end, and it returns null when the index is out of range rather than raising an error.",
+        "stop_reason": "end_turn"
+      },
+      "B": {
+        "text": "Use `F.array_contains` for the membership check and `F.element_at` for the 1-based lookup.\n\n```python\nfrom pyspark.sql import SparkSession, functions as F\n\nspark = SparkSession.builder.getOrCreate()\ndf = spark.createDataFrame([([5, 7, 9],), ([1, 2, 3],)], [\"arr\"])\n\ndf.select(\n    F.array_contains(\"arr\", 7).alias(\"has_7\"),        # true, false\n    F.element_at(\"arr\", 2).alias(\"second_elem\"),      # 7, 2\n).show()\n```\n\n`element_at` is 1-based. `F.get` is the 0-based alternative, so don't mix them up.",
+        "stop_reason": "end_turn"
+      }
+    },
+    {
+      "id": "higher-order-transform",
+      "regime": "deep",
+      "category": "functions",
+      "question": "In PySpark, how do I apply an expression to every element of an array column (multiply each by 2), and separately keep only elements that pass a predicate? Name the higher-order functions and show them.",
+      "A": {
+        "text": "Use the higher-order functions `F.transform` (map) and `F.filter` (keep matching elements), both available in Spark 3.1+ (so fine on 3.5). They take a lambda over each element.\n\n```python\nfrom pyspark.sql import SparkSession, functions as F\n\nspark = SparkSession.builder.getOrCreate()\ndf = spark.createDataFrame([([1, 2, 3, 4, 5],)], [\"nums\"])\n\nresult = df.select(\n    # Map: multiply each element by 2 -> [2, 4, 6, 8, 10]\n    F.transform(\"nums\", lambda x: x * 2).alias(\"doubled\"),\n    # Filter: keep elements greater than 2 -> [3, 4, 5]\n    F.filter(\"nums\", lambda x: x > 2).alias(\"gt2\"),\n)\nresult.show(truncate=False)\n```\n\nEquivalent in SQL:\n\n```sql\nSELECT transform(nums, x -> x * 2) AS doubled,\n       filter(nums, x -> x > 2)    AS gt2\nFROM t\n```\n\nNotes:\n- `F.transform` returns an array of the same length; `F.filter` returns a subset.\n- The lambda can reference other columns only through a `F.lambda`-style closure in SQL; in the Python API, stick to the element variable and literals/columns of the same row as needed.",
+        "stop_reason": "end_turn"
+      },
+      "B": {
+        "text": "Use **`F.transform`** to apply an expression to each element, and **`F.filter`** to keep only elements that match a predicate. Both take a Python lambda that Spark translates into a SQL lambda.\n\n```python\nfrom pyspark.sql import SparkSession, functions as F\n\nspark = SparkSession.builder.getOrCreate()\ndf = spark.createDataFrame([([1, 2, 3, 4],)], [\"arr\"])\n\ndf.select(\n    F.transform(\"arr\", lambda x: x * 2).alias(\"doubled\"),   # [2, 4, 6, 8]\n    F.filter(\"arr\", lambda x: x > 2).alias(\"big_only\"),     # [3, 4]\n).show()\n```\n\nThe SQL equivalents are `transform(arr, x -> x * 2)` and `filter(arr, x -> x > 2)`, which you can use in `spark.sql` or `F.expr`.",
+        "stop_reason": "end_turn"
+      }
+    },
+    {
+      "id": "percentile",
+      "regime": "deep",
+      "category": "functions",
+      "question": "In PySpark, how do I compute the approximate median (50th percentile) of a column per group? Name the function and show it.",
+      "A": {
+        "text": "Use `F.percentile_approx` with a percentile of `0.5` inside `groupBy().agg()`:\n\n```python\nfrom pyspark.sql import functions as F\n\nresult = (\n    df.groupBy(\"group_col\")\n      .agg(F.percentile_approx(\"value_col\", 0.5).alias(\"approx_median\"))\n)\nresult.show()\n```\n\nYou can pass an optional third argument, `accuracy` (default 10000), to trade precision for memory. Equivalent SQL:\n\n```sql\nSELECT group_col, percentile_approx(value_col, 0.5) AS approx_median\nFROM my_table\nGROUP BY group_col\n```",
+        "stop_reason": "end_turn"
+      },
+      "B": {
+        "text": "Use `F.percentile_approx` with a percentage of `0.5`:\n\n```python\nfrom pyspark.sql import functions as F\n\nresult = (\n    df.groupBy(\"group_col\")\n      .agg(F.percentile_approx(\"value\", 0.5).alias(\"approx_median\"))\n)\n```\n\nThe equivalent Spark SQL is `approx_percentile(value, 0.5)`. It returns the smallest value whose cumulative distribution reaches 0.5. The optional third argument `accuracy` (default 10000) trades memory for precision.",
+        "stop_reason": "end_turn"
+      }
+    },
+    {
+      "id": "date-arithmetic",
+      "regime": "deep",
+      "category": "functions",
+      "question": "In PySpark, how do I add 7 days to a date column, and separately get the whole number of months between two date columns? Name the functions and show them.",
+      "A": {
+        "text": "Use `F.date_add` for days and `F.months_between` for months (which returns a fractional value; wrap it in `F.floor` or `F.round` if you need a whole number, or use `F.add_months` to go the other way).\n\n```python\nfrom pyspark.sql import SparkSession, functions as F\n\nspark = SparkSession.builder.getOrCreate()\n\ndf = spark.createDataFrame(\n    [(\"2024-01-15\", \"2024-04-10\")],\n    [\"start_date\", \"end_date\"]\n).select(F.to_date(\"start_date\").alias(\"start_date\"),\n         F.to_date(\"end_date\").alias(\"end_date\"))\n\nresult = df.select(\n    F.date_add(\"start_date\", 7).alias(\"plus_7_days\"),\n    F.months_between(\"end_date\", \"start_date\").alias(\"months_frac\"),\n    F.floor(F.months_between(\"end_date\", \"start_date\")).alias(\"whole_months\"),\n)\nresult.show()\n```\n\nNotes:\n- `F.date_add(col, n)` adds days; `F.date_sub(col, n)` subtracts.\n- `F.months_between(end, start)` returns a double. `F.floor` gives the whole number of completed months. Spark's `months_between` is positive when `end` is later than `start`.",
+        "stop_reason": "end_turn"
+      },
+      "B": {
+        "text": "**Add 7 days:** use `F.date_add`.\n\n**Whole months between two dates:** use `F.months_between`, then `F.floor` to drop the fractional part.\n\n```python\nfrom pyspark.sql import functions as F\n\ndf = (\n    df\n    .withColumn(\"plus_7_days\", F.date_add(\"order_date\", 7))\n    .withColumn(\n        \"whole_months\",\n        F.floor(F.months_between(\"end_date\", \"start_date\")).cast(\"int\"),\n    )\n)\n```\n\n`F.months_between` returns a double, such as `2.4516129`. `F.floor` gives `2`. Because `floor` rounds toward negative infinity, a negative result like `-2.5` becomes `-3`, not `-2`. If you need truncation toward zero, tell me and I'll adjust it.",
+        "stop_reason": "end_turn"
+      }
+    },
+    {
+      "id": "unix-timestamp",
+      "regime": "deep",
+      "category": "functions",
+      "question": "In PySpark, how do I convert a Unix epoch-seconds column into a formatted timestamp string? Name the function and show it.",
+      "A": {
+        "text": "Use `F.from_unixtime` with a format pattern. It takes seconds since epoch and returns a string in the session time zone:\n\n```python\nfrom pyspark.sql import functions as F\n\ndf = df.withColumn(\n    \"ts_str\",\n    F.from_unixtime(F.col(\"epoch_seconds\"), \"yyyy-MM-dd HH:mm:ss\")\n)\n```\n\nIf you need a real `TimestampType` column instead of a string, cast the result with `F.timestamp_seconds`, which is the direct route in Spark 3.5:\n\n```python\ndf = df.withColumn(\"ts\", F.timestamp_seconds(F.col(\"epoch_seconds\")))\n```\n\nThen format it with `F.date_format` if needed:\n\n```python\ndf = df.withColumn(\"ts_str\", F.date_format(\"ts\", \"yyyy-MM-dd HH:mm:ss\"))\n```",
+        "stop_reason": "end_turn"
+      },
+      "B": {
+        "text": "Use `F.from_unixtime`. It takes seconds since the epoch and returns a formatted string.\n\n```python\nfrom pyspark.sql import functions as F\n\ndf = df.withColumn(\"ts_str\", F.from_unixtime(F.col(\"epoch_sec\"), \"yyyy-MM-dd HH:mm:ss\"))\n```\n\nThe output is rendered in the session time zone (`spark.sql.session.timeZone`). If you need a real `TimestampType` column rather than a string, use `F.timestamp_seconds(\"epoch_sec\")`.",
+        "stop_reason": "end_turn"
+      }
+    },
+    {
+      "id": "struct-json",
+      "regime": "deep",
+      "category": "functions",
+      "question": "In PySpark, how do I build a struct column from two columns and then serialize it to a JSON string column? Name the functions and show them.",
+      "A": {
+        "text": "Use `F.struct` to build the struct and `F.to_json` to serialize it.\n\n```python\nfrom pyspark.sql import SparkSession, functions as F\n\nspark = SparkSession.builder.getOrCreate()\n\ndf = spark.createDataFrame(\n    [(1, \"alice\"), (2, \"bob\")],\n    [\"id\", \"name\"]\n)\n\nresult = (\n    df\n    .withColumn(\"person\", F.struct(F.col(\"id\"), F.col(\"name\")))\n    .withColumn(\"person_json\", F.to_json(F.col(\"person\")))\n)\n\nresult.show(truncate=False)\n# +---+-----+-----------+-------------------------+\n# |id |name |person     |person_json              |\n# +---+-----+-----------+-------------------------+\n# |1  |alice|{1, alice} |{\"id\":1,\"name\":\"alice\"}  |\n# |2  |bob  |{2, bob}   |{\"id\":2,\"name\":\"bob\"}    |\n# +---+-----+-----------+-------------------------+\n```\n\nYou can also do it in one step if you don't need the intermediate struct:\n\n```python\ndf.withColumn(\n    \"person_json\",\n    F.to_json(F.struct(\"id\", \"name\"))\n)\n```\n\nNotes:\n- `F.struct` takes column names as strings or `Column` objects. Use `.alias()` inside it to rename fields, e.g. `F.struct(F.col(\"id\").alias(\"user_id\"))`.\n- `F.to_json` works on structs, arrays, and maps. It drops null fields by default; pass `options={\"ignoreNullFields\": \"false\"}` to keep them.",
+        "stop_reason": "end_turn"
+      },
+      "B": {
+        "text": "Use `F.struct` to build the struct and `F.to_json` to serialize it:\n\n```python\nfrom pyspark.sql import functions as F\n\ndf = spark.createDataFrame([(1, \"alice\"), (2, \"bob\")], [\"id\", \"name\"])\n\nresult = (\n    df.withColumn(\"person\", F.struct(\"id\", \"name\"))\n      .withColumn(\"person_json\", F.to_json(\"person\"))\n)\n\nresult.select(\"person_json\").show(truncate=False)\n# {\"id\":1,\"name\":\"alice\"}\n# {\"id\":2,\"name\":\"bob\"}\n```\n\nTo control the field names in the JSON, alias the columns inside `F.struct`:\n\n```python\ndf.withColumn(\n    \"person_json\",\n    F.to_json(F.struct(F.col(\"id\").alias(\"user_id\"), F.col(\"name\").alias(\"user_name\")))\n).show(truncate=False)\n# {\"user_id\":1,\"user_name\":\"alice\"}\n```\n\n`F.named_struct` also works if you prefer to pass name/value pairs explicitly:\n\n```python\nF.to_json(F.named_struct(F.lit(\"user_id\"), F.col(\"id\"), F.lit(\"user_name\"), F.col(\"name\")))\n```",
+        "stop_reason": "end_turn"
+      }
+    },
+    {
+      "id": "sql-split-part",
+      "regime": "deep",
+      "category": "sql-functions",
+      "question": "In Spark SQL (inside spark.sql), how do I get the 2nd part of a string split on \"-\"? Write the SELECT. Name the SQL function.",
+      "A": {
+        "text": "Use the `split` function and index the resulting array. Spark array indexing is 0-based, so the 2nd part is index `1`:\n\n```python\nspark.sql(\"\"\"\n    SELECT split(my_col, '-')[1] AS second_part\n    FROM my_table\n\"\"\").show()\n```\n\nThe `split` function takes a regex, but `'-'` is a literal character in a regex, so no escaping is needed. If the string has fewer than two parts, the result is `NULL`.",
+        "stop_reason": "end_turn"
+      },
+      "B": {
+        "text": "Use `split_part`. It splits on a literal delimiter and takes the 1-based part number.\n\n```python\ndf = spark.sql(\"\"\"\n    SELECT split_part(code, '-', 2) AS second_part\n    FROM my_table\n\"\"\")\n```\n\n`split_part(str, delimiter, partNum)` returns an empty string if `partNum` is out of range, and `null` if any input is null.",
+        "stop_reason": "end_turn"
+      }
+    },
+    {
+      "id": "sql-date-diff",
+      "regime": "deep",
+      "category": "sql-functions",
+      "question": "In Spark SQL (inside spark.sql), how do I get the number of days between two date columns? Write the SELECT and name the SQL function.",
+      "A": {
+        "text": "In Spark SQL, use `datediff(endDate, startDate)`, which returns the number of days from the second argument to the first (end minus start).\n\n```python\ndf.createOrReplaceTempView(\"events\")\n\nresult = spark.sql(\"\"\"\n    SELECT\n        id,\n        start_date,\n        end_date,\n        datediff(end_date, start_date) AS days_between\n    FROM events\n\"\"\")\nresult.show()\n```\n\nThe function is `datediff`. Note that the argument order is end date first, then start date, so a positive result means `end_date` is later than `start_date`.",
+        "stop_reason": "end_turn"
+      },
+      "B": {
+        "text": "Use **`datediff(endDate, startDate)`**. It returns the number of days from `startDate` to `endDate`, so the end date goes first.\n\n```python\ndf.createOrReplaceTempView(\"events\")\n\nresult = spark.sql(\"\"\"\n    SELECT id,\n           start_date,\n           end_date,\n           datediff(end_date, start_date) AS days_between\n    FROM events\n\"\"\")\n```\n\n`date_diff(endDate, startDate)` takes the same arguments in the same order and is an equivalent alias.",
+        "stop_reason": "end_turn"
+      }
+    }
+  ]
+}

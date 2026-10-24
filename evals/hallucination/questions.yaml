@@ -1,0 +1,143 @@
+# Questions for the invented-name A/B. Same design as powerquery-m-for-agents and dax-for-agents.
+#
+# Each question's answer must NAME SPARK FUNCTIONS, because that is what the metric counts: every
+# `F.<name>(...)` in ```python code and every `name(...)` inside a spark.sql / expr / selectExpr
+# string. The library's hallucination surface is the function name -- 422 PySpark functions and
+# 438 SQL functions -- so questions live in the `functions` and `sql-functions` categories, not
+# in DataFrame/Column methods (which the metric does not score).
+#
+# `regime` splits the bank in two, and the halves are never averaged together:
+#   core  the everyday functions every tutorial covers: col, lit, when, concat, coalesce, to_date.
+#   deep  the obscure and easily-confused corners: array/map/higher-order functions, regexp_*,
+#         date arithmetic, percentile_approx, element_at -- where a plausible-but-wrong name is
+#         most tempting. This is where a current reference earns its keep.
+#
+# `category` is `functions` (PySpark F.*) or `sql-functions` (Spark SQL). Arm B is given that
+# category's names and one-line summaries, never the card that holds the answer.
+#
+# `traps` are plausible names that do NOT exist in Spark 3.5. A test asserts each is flagged.
+
+questions:
+  # ---------------------------------------------------------------- core
+  - id: conditional-column
+    regime: core
+    category: functions
+    question: >-
+      In PySpark, how do I add a column that is "high" when amount > 100 and "low" otherwise?
+      Name the functions and show a short snippet.
+    traps: [F.if_else, F.case_when]
+
+  - id: coalesce-nulls
+    regime: core
+    category: functions
+    question: >-
+      In PySpark, how do I return the first non-null among three columns a, b, c into one column?
+      Name the function and show it.
+    traps: [F.ifnull_multi, F.first_non_null]
+
+  - id: string-concat
+    regime: core
+    category: functions
+    question: >-
+      In PySpark, how do I concatenate two string columns with a "-" separator between them? Name
+      the function and show it.
+    traps: [F.concat_sep, F.join_str]
+
+  - id: to-date-parse
+    regime: core
+    category: functions
+    question: >-
+      In PySpark, how do I parse a string column "2024-03-15" into a date, and separately format a
+      date column as "yyyy/MM"? Name the functions and show them.
+    traps: [F.str_to_date, F.parse_date, F.format_date]
+
+  - id: substring-extract
+    regime: core
+    category: functions
+    question: >-
+      In PySpark, how do I take characters 2 through 5 of a string column, and separately the part
+      after the last "/"? Name the functions and show them.
+    traps: [F.mid, F.substr_after]
+
+  - id: round-agg
+    regime: core
+    category: functions
+    question: >-
+      In PySpark, how do I compute the average of a column per group, rounded to 2 decimals? Name
+      the functions and show the aggregation.
+    traps: [F.average, F.mean_round]
+
+  # ---------------------------------------------------------------- deep
+  - id: regexp-group
+    regime: deep
+    category: functions
+    question: >-
+      In PySpark, I have codes like "INV-2024-0042". How do I extract the middle number with a
+      regex capture group? Name the function and show it.
+    traps: [F.regexp_capture, F.regexp_group, F.regex_extract]
+
+  - id: array-membership
+    regime: deep
+    category: functions
+    question: >-
+      In PySpark, how do I check whether an array column contains the value 7, and separately get
+      the element at position 2 (1-based)? Name the functions and show them.
+    traps: [F.array_has, F.list_contains, F.array_get]
+
+  - id: higher-order-transform
+    regime: deep
+    category: functions
+    question: >-
+      In PySpark, how do I apply an expression to every element of an array column (multiply each
+      by 2), and separately keep only elements that pass a predicate? Name the higher-order
+      functions and show them.
+    traps: [F.array_map, F.map_array, F.array_where]
+
+  - id: percentile
+    regime: deep
+    category: functions
+    question: >-
+      In PySpark, how do I compute the approximate median (50th percentile) of a column per group?
+      Name the function and show it.
+    traps: [F.approx_median, F.median_approx, F.percentile_cont]
+
+  - id: date-arithmetic
+    regime: deep
+    category: functions
+    question: >-
+      In PySpark, how do I add 7 days to a date column, and separately get the whole number of
+      months between two date columns? Name the functions and show them.
+    traps: [F.add_days, F.date_plus, F.month_diff]
+
+  - id: unix-timestamp
+    regime: deep
+    category: functions
+    question: >-
+      In PySpark, how do I convert a Unix epoch-seconds column into a formatted timestamp string?
+      Name the function and show it.
+    traps: [F.epoch_to_timestamp, F.from_epoch]
+
+  - id: struct-json
+    regime: deep
+    category: functions
+    question: >-
+      In PySpark, how do I build a struct column from two columns and then serialize it to a JSON
+      string column? Name the functions and show them.
+    traps: [F.make_struct, F.to_json_string]
+
+  # ---------------------------------------------------------------- deep (SQL)
+  - id: sql-split-part
+    regime: deep
+    category: sql-functions
+    question: >-
+      In Spark SQL (inside spark.sql), how do I get the 2nd part of a string split on "-"? Write
+      the SELECT. Name the SQL function.
+    traps: [str_split, split_string]
+
+  - id: sql-date-diff
+    regime: deep
+    category: sql-functions
+    question: >-
+      In Spark SQL (inside spark.sql), how do I get the number of days between two date columns?
+      Write the SELECT and name the SQL function.
+    traps: [date_sub_days, days_between]
