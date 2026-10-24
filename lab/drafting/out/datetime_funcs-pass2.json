@@ -1,0 +1,94 @@
+{
+  "notes": [
+    {
+      "function": "date_sub",
+      "trap": "`date_sub(...)` always returns a DATE. If you pass a TIMESTAMP, the time-of-day is silently dropped rather than kept.",
+      "example_sql": "SELECT CAST(date_sub(TIMESTAMP'2016-07-30 23:59:59', 1) AS STRING)",
+      "expected": "2016-07-29",
+      "verified": true,
+      "in_part": true,
+      "actual": "2016-07-29"
+    },
+    {
+      "function": "dayofyear",
+      "trap": "With ANSI mode off (the default), an invalid date string does not raise an error. It is cast to NULL, so the function quietly returns NULL.",
+      "example_sql": "SELECT dayofyear('2016-02-30')",
+      "expected": "NULL",
+      "verified": true,
+      "in_part": true,
+      "actual": "NULL"
+    },
+    {
+      "function": "hour",
+      "trap": "A date-only string is cast to a timestamp at midnight. The function then returns 0 instead of NULL or an error.",
+      "example_sql": "SELECT hour('2009-07-30')",
+      "expected": "0",
+      "verified": true,
+      "in_part": true,
+      "actual": "0"
+    },
+    {
+      "function": "make_dt_interval",
+      "trap": "Out-of-range fields are normalized, not rejected. For example, 90 seconds becomes 1 minute 30 seconds. Any NULL argument makes the whole result NULL.",
+      "example_sql": "SELECT make_dt_interval(0, 0, 0, 90) = INTERVAL '90' SECOND",
+      "expected": "true",
+      "verified": true,
+      "in_part": true,
+      "actual": "true"
+    },
+    {
+      "function": "make_timestamp_ntz",
+      "trap": "With ANSI off, an impossible date such as February 30 returns NULL instead of raising an error. sec=60 is accepted and rolls over to the next minute.",
+      "example_sql": "SELECT make_timestamp_ntz(2019, 2, 30, 0, 0, 0)",
+      "expected": "NULL",
+      "verified": true,
+      "in_part": true,
+      "actual": "NULL"
+    },
+    {
+      "function": "make_timestamp_ltz",
+      "trap": "The optional timezone argument says how to read the input fields. The result is still displayed in the session time zone, so the printed hour differs from the hour you passed.",
+      "example_sql": "SELECT CAST(make_timestamp_ltz(2014, 12, 28, 6, 30, 45.887, 'CET') AS STRING)",
+      "expected": "2014-12-28 05:30:45.887",
+      "verified": true,
+      "in_part": true,
+      "actual": "2014-12-28 05:30:45.887"
+    },
+    {
+      "function": "timestamp_millis",
+      "trap": "The input is milliseconds. Passing epoch seconds by mistake gives a timestamp in January 1970 with no error. Use `timestamp_seconds(...)` for epoch seconds.",
+      "example_sql": "SELECT CAST(timestamp_millis(1230219000) AS STRING)",
+      "expected": "1970-01-15 05:43:39",
+      "verified": true,
+      "in_part": true,
+      "actual": "1970-01-15 05:43:39"
+    },
+    {
+      "function": "to_timestamp_ltz",
+      "trap": "With ANSI off, a string that does not match the format returns NULL instead of raising an error. This silently hides format mismatches.",
+      "example_sql": "SELECT to_timestamp_ltz('2016-12-31', 'dd/MM/yyyy')",
+      "expected": "NULL",
+      "verified": true,
+      "in_part": true,
+      "actual": "NULL"
+    },
+    {
+      "function": "current_timezone",
+      "trap": "It returns the session setting spark.sql.session.timeZone, not the JVM or OS time zone.",
+      "example_sql": "SELECT current_timezone()",
+      "expected": "UTC",
+      "verified": true,
+      "in_part": true,
+      "actual": "UTC"
+    },
+    {
+      "function": "date_from_unix_date",
+      "trap": "Negative day counts are accepted and give dates before 1970-01-01. This is the inverse of `unix_date(...)`.",
+      "example_sql": "SELECT CAST(date_from_unix_date(-1) AS STRING)",
+      "expected": "1969-12-31",
+      "verified": true,
+      "in_part": true,
+      "actual": "1969-12-31"
+    }
+  ]
+}

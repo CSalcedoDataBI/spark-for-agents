@@ -1,0 +1,40 @@
+{
+  "notes": [
+    {
+      "function": "map_contains_key",
+      "trap": "It tests only whether the key exists. A key whose value is NULL still returns true, while `map[key]` returns NULL both for a missing key and for a present key with a NULL value. A NULL map gives NULL, not false.",
+      "example_sql": "SELECT map_contains_key(map('a', CAST(NULL AS STRING)), 'a')",
+      "expected": "true",
+      "verified": true,
+      "in_part": true,
+      "actual": "true"
+    },
+    {
+      "function": "map_keys",
+      "trap": "Under the default spark.sql.mapKeyDedupPolicy=EXCEPTION, building a map with a duplicate key fails instead of keeping the last value. So `map_keys(...)` over such a map never returns de-duplicated keys; the query errors.",
+      "example_sql": "SELECT map_keys(map(1, 'a', 1, 'b'))",
+      "expected": "ERROR: DUPLICATED_MAP_KEY",
+      "verified": true,
+      "in_part": true,
+      "actual": "ERROR: SparkRuntimeException DUPLICATED_MAP_KEY :: [DUPLICATED_MAP_KEY] Duplicate map key 1 was found, please check the input data. If you want to remove the duplicated keys, you can set \"spark.sql.mapKeyDedupPolicy\" to \"LAST_WIN\" so that the key inserted at last takes precedence."
+    },
+    {
+      "function": "map_entries",
+      "trap": "It returns an array of structs with fields named `key` and `value`. Bracket subscripts on that array are 0-based, unlike the 1-based `element_at(...)`.",
+      "example_sql": "SELECT map_entries(map('a', 1))[0].key",
+      "expected": "a",
+      "verified": true,
+      "in_part": true,
+      "actual": "a"
+    },
+    {
+      "function": "map_values",
+      "trap": "Map keys can never be NULL, but values can. The array returned by `map_values(...)` keeps NULL elements, which print as lowercase `null` when the array is cast to a string.",
+      "example_sql": "SELECT CAST(map_values(map(1, CAST(NULL AS STRING))) AS STRING)",
+      "expected": "[null]",
+      "verified": true,
+      "in_part": true,
+      "actual": "[null]"
+    }
+  ]
+}

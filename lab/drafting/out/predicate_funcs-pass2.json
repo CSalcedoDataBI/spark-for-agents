@@ -1,0 +1,58 @@
+{
+  "notes": [
+    {
+      "function": "regexp",
+      "trap": "`regexp(...)` (like `rlike(...)`) returns true when the pattern matches anywhere in the string. It does not require a full-string match, so anchor with ^ and $ when you need an exact match.",
+      "example_sql": "SELECT regexp('abc', 'b')",
+      "expected": "true",
+      "verified": true,
+      "in_part": true,
+      "actual": "true"
+    },
+    {
+      "function": "==",
+      "trap": "With ANSI off, comparing a string to a number implicitly casts the string to the numeric type. An unparsable string becomes NULL, so the comparison returns NULL rather than false or an error. Also `NULL == NULL` is NULL; use `<=>` or `equal_null(...)` for null-safe equality.",
+      "example_sql": "SELECT 'abc' == 1",
+      "expected": "NULL",
+      "verified": true,
+      "in_part": true,
+      "actual": "NULL"
+    },
+    {
+      "function": "<=",
+      "trap": "When both sides are strings, the comparison is lexicographic, not numeric. Numbers stored as strings therefore compare unexpectedly.",
+      "example_sql": "SELECT '10' <= '9'",
+      "expected": "true",
+      "verified": true,
+      "in_part": true,
+      "actual": "true"
+    },
+    {
+      "function": "ilike",
+      "trap": "Only the case-insensitivity differs from LIKE: `_` and `%` remain wildcards. A literal underscore must be escaped (the default escape character is backslash, written '\\\\' in a SQL literal).",
+      "example_sql": "SELECT 'AXC' ilike 'a_c'",
+      "expected": "true",
+      "verified": true,
+      "in_part": true,
+      "actual": "true"
+    },
+    {
+      "function": "isnotnull",
+      "trap": "`isnotnull(...)` never returns NULL. It returns false for NULL input, unlike comparisons such as `x != NULL`, which yield NULL.",
+      "example_sql": "SELECT isnotnull(NULL)",
+      "expected": "false",
+      "verified": true,
+      "in_part": true,
+      "actual": "false"
+    },
+    {
+      "function": "not",
+      "trap": "NOT follows three-valued logic: negating an unknown (NULL) comparison stays NULL. Rows filtered with WHERE NOT (col = x) therefore also drop rows where col is NULL.",
+      "example_sql": "SELECT NOT (CAST(NULL AS INT) = 1)",
+      "expected": "NULL",
+      "verified": true,
+      "in_part": true,
+      "actual": "NULL"
+    }
+  ]
+}

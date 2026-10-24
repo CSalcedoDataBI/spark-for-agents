@@ -1,0 +1,49 @@
+{
+  "notes": [
+    {
+      "function": "bitmap_count",
+      "trap": "`bitmap_count(...)` counts set bits in the raw bytes of a BINARY value. It does not count hex digits or distinct values. X '1010' is the bytes 0x10 0x10, which have only 2 set bits.",
+      "example_sql": "SELECT bitmap_count(X '1010')",
+      "expected": "2",
+      "verified": true,
+      "in_part": true,
+      "actual": "2"
+    },
+    {
+      "function": "hll_sketch_estimate",
+      "trap": "`hll_sketch_estimate(...)` takes the binary sketch produced by `hll_sketch_agg(...)` or `hll_union(...)`, not the raw column. NULL inputs are skipped when the sketch is built, so they never count as a distinct value.",
+      "example_sql": "SELECT hll_sketch_estimate(hll_sketch_agg(col)) FROM VALUES (1), (NULL), (2) tab(col)",
+      "expected": "2",
+      "verified": true,
+      "in_part": true,
+      "actual": "2"
+    },
+    {
+      "function": "input_file_block_length",
+      "trap": "`input_file_block_length(...)` returns -1, not NULL or an error, when the row does not come from a file scan. Examples are literals, VALUES lists, or the result after a shuffle.",
+      "example_sql": "SELECT input_file_block_length()",
+      "expected": "-1",
+      "verified": true,
+      "in_part": true,
+      "actual": "-1"
+    },
+    {
+      "function": "java_method",
+      "trap": "`java_method(...)` (alias `reflect(...)`) always returns STRING, whatever the Java method's return type is. Cast the result back if you need a number.",
+      "example_sql": "SELECT typeof(java_method('java.lang.Math', 'abs', -5))",
+      "expected": "string",
+      "verified": true,
+      "in_part": true,
+      "actual": "string"
+    },
+    {
+      "function": "monotonically_increasing_id",
+      "trap": "IDs are unique but not consecutive, because the partition id sits in the upper 31 bits. Do not use it as a dense row number; use `row_number(...)` instead. Only rows in partition 0 start at 0.",
+      "example_sql": "SELECT monotonically_increasing_id()",
+      "expected": "0",
+      "verified": true,
+      "in_part": true,
+      "actual": "0"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "notes": [
+    {
+      "function": "md5",
+      "trap": "`md5(...)` returns a 32-character lowercase hex STRING, not BINARY. String input is hashed as its UTF-8 bytes, so an empty string gets a real digest. Only a NULL input gives NULL.",
+      "example_sql": "SELECT md5('')",
+      "expected": "d41d8cd98f00b204e9800998ecf8427e",
+      "verified": true,
+      "in_part": true,
+      "actual": "d41d8cd98f00b204e9800998ecf8427e"
+    },
+    {
+      "function": "sha",
+      "trap": "`sha(...)` is just an alias of `sha1(...)` and returns a 40-hex-character SHA-1 digest, not SHA-256. For SHA-2 you must call `sha2(...)` with an explicit bit length, e.g. `sha2(expr, 256)`.",
+      "example_sql": "SELECT length(sha('Spark'))",
+      "expected": "40",
+      "verified": true,
+      "in_part": true,
+      "actual": "40"
+    },
+    {
+      "function": "sha1",
+      "trap": "The hex string is lowercase. Comparing it with uppercase digests produced by other tools or engines silently returns false. Normalize with `lower(...)` or `upper(...)` before comparing.",
+      "example_sql": "SELECT sha1('Spark') = '85F5955F4B27A9A4C2AAB6FFE5D7189FC298B92C'",
+      "expected": "false",
+      "verified": true,
+      "in_part": true,
+      "actual": "false"
+    }
+  ]
+}

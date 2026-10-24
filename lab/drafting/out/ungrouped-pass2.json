@@ -1,0 +1,13 @@
+{
+  "notes": [
+    {
+      "function": "sql_keywords",
+      "trap": "`sql_keywords()` is a table-valued function, so it belongs in the FROM clause and not in the SELECT list. It returns two columns, `keyword` and `reserved`. Keywords are stored in upper case, so case-sensitive filters such as keyword = 'select' match nothing.",
+      "example_sql": "SELECT max(keyword) FROM sql_keywords() WHERE keyword = 'SELECT'",
+      "expected": "SELECT",
+      "verified": true,
+      "in_part": true,
+      "actual": "SELECT"
+    }
+  ]
+}

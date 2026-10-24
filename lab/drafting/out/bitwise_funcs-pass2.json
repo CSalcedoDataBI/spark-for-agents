@@ -1,0 +1,22 @@
+{
+  "notes": [
+    {
+      "function": "getbit",
+      "trap": "Bit positions are 0-based and counted from the least-significant (rightmost) bit, unlike the 1-based string and array functions in Spark. The value is read in two's complement at the width of its integral type, so negative numbers have high bits set (for an INT, bit 31 is the sign bit).",
+      "example_sql": "SELECT getbit(-1, 31)",
+      "expected": "1",
+      "verified": true,
+      "in_part": true,
+      "actual": "1"
+    },
+    {
+      "function": "~",
+      "trap": "`~` is bitwise NOT on integral types (two's complement), not logical negation. `~ 5` is -6, not 0 or false. For boolean negation use `not(...)` or `!(...)`.",
+      "example_sql": "SELECT ~ 5",
+      "expected": "-6",
+      "verified": true,
+      "in_part": true,
+      "actual": "-6"
+    }
+  ]
+}
