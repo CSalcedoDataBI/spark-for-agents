@@ -1,8 +1,7 @@
 # Ficha — spark-for-agents
 
-> Ficha NORTE de esta herramienta. La lee su experto (`.claude/agents/experto.md`) en cada PR.
-> Se mantiene con las reglas internas del mantenedor: su norte es `FICHA.md` y el agente `experto`
-> fusiona contra ella.
+> Ficha de esta herramienta. La lee su experto (`.claude/agents/experto.md`) en cada PR.
+> Su guía es `FICHA.md` y el agente `experto` fusiona contra ella.
 > Cambiarla exige una nueva aprobación de Cristóbal.
 
 ## Qué es
@@ -44,10 +43,10 @@ Lo que no se toca sin un paso del plan que lo nombre:
 - **Formato de tag:** `vX.Y.Z`, con release-please (`release-please-config.json`).
 - **Experto:** `.claude/agents/experto.md`
 - **¿Plugin del directorio?:** todavía no. Se envía cuando salga de pre-release; desde entonces,
-  `stable` no se toca y publicar sigue R5.
+  `stable` no se toca y cada publicación sigue el protocolo de releases del directorio.
 - **Partes visibles que aprueba Cristóbal:** el README de cara al público y la salida de
   pre-release.
 
 ## Aprobación
 
-Aprobada: 2026-10-23 (mantenedor)
+Aprobada: 2026-10-24 (mantenedor)
