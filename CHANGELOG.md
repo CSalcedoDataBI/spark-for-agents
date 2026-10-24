@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.0](https://github.com/CSalcedoDataBI/spark-for-agents/compare/v0.1.0...v0.2.0) (2026-10-24)
+
+
+### Features
+
+* **drafting:** second pass over uncovered Spark SQL functions (73/74 engine-verified) ([#12](https://github.com/CSalcedoDataBI/spark-for-agents/issues/12)) ([adf44a3](https://github.com/CSalcedoDataBI/spark-for-agents/commit/adf44a327b3717e0877bfaafcef23287b60c8459))
+* **evals:** invented-name A/B hallucination eval ([#10](https://github.com/CSalcedoDataBI/spark-for-agents/issues/10)) ([38b6732](https://github.com/CSalcedoDataBI/spark-for-agents/commit/38b6732baf1a4e2dd02e00c3ef421003be64bba6))
+
 ## 0.1.0 (2026-10-23)
 
 
