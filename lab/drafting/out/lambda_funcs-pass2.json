@@ -1,0 +1,22 @@
+{
+  "notes": [
+    {
+      "function": "map_filter",
+      "trap": "The lambda always receives two arguments, key first and then value, so it must be written as `(k, v) -> ...` even when only the value matters. When the predicate evaluates to NULL, for example a comparison on a NULL map value, the entry is dropped just as if it were false.",
+      "example_sql": "SELECT cardinality(map_filter(map(1, 0, 2, CAST(NULL AS INT)), (k, v) -> v > -1))",
+      "expected": "1",
+      "verified": true,
+      "in_part": true,
+      "actual": "1"
+    },
+    {
+      "function": "transform_values",
+      "trap": "The lambda receives (key, value) in that order, so a lambda written as `(v, k)` silently operates on the key. NULL values are passed into the lambda and keep their entry: with `v + 1` they become NULL values, and the key is not removed. Use `map_filter(...)` if you want to drop them.",
+      "example_sql": "SELECT map_contains_key(transform_values(map('a', 1, 'b', CAST(NULL AS INT)), (k, v) -> v + 1), 'b')",
+      "expected": "true",
+      "verified": true,
+      "in_part": true,
+      "actual": "true"
+    }
+  ]
+}

@@ -1,0 +1,76 @@
+{
+  "notes": [
+    {
+      "function": "any",
+      "trap": "`any(...)` ignores NULLs, but if every input is NULL, or there are no rows, it returns NULL rather than false. Wrap it in `coalesce(...)` if you need a strict boolean.",
+      "example_sql": "SELECT any(col) FROM VALUES (CAST(NULL AS BOOLEAN)), (CAST(NULL AS BOOLEAN)) AS tab(col)",
+      "expected": "NULL",
+      "verified": true,
+      "in_part": true,
+      "actual": "NULL"
+    },
+    {
+      "function": "stddev_samp",
+      "trap": "With a single non-null value, `stddev_samp(...)` returns NULL, not 0.0 and not NaN, because the sample size minus one is zero. `stddev_pop(...)` returns 0.0 for the same input.",
+      "example_sql": "SELECT stddev_samp(col) FROM VALUES (5) AS tab(col)",
+      "expected": "NULL",
+      "verified": true,
+      "in_part": true,
+      "actual": "NULL"
+    },
+    {
+      "function": "var_pop",
+      "trap": "Unlike `var_samp(...)`, `var_pop(...)` of a single value returns 0.0 rather than NULL. The result is always DOUBLE, even for integer input.",
+      "example_sql": "SELECT var_pop(col) FROM VALUES (7) AS tab(col)",
+      "expected": "0.0",
+      "verified": true,
+      "in_part": true,
+      "actual": "0.0"
+    },
+    {
+      "function": "min",
+      "trap": "`min(...)` compares using the column type, so on strings it is lexicographic. The string '10' sorts before '9', so cast to a numeric type first if the values are numbers stored as text.",
+      "example_sql": "SELECT min(col) FROM VALUES ('10'), ('9') AS tab(col)",
+      "expected": "10",
+      "verified": true,
+      "in_part": true,
+      "actual": "10"
+    },
+    {
+      "function": "mode",
+      "trap": "`mode(...)` ignores NULLs entirely, even when NULL is the most frequent value. The result is the most frequent non-null value, or NULL only if all inputs are NULL.",
+      "example_sql": "SELECT mode(col) FROM VALUES (CAST(NULL AS INT)), (NULL), (NULL), (1) AS tab(col)",
+      "expected": "1",
+      "verified": true,
+      "in_part": true,
+      "actual": "1"
+    },
+    {
+      "function": "last_value",
+      "trap": "By default `last_value(...)` does not skip NULLs, so a trailing NULL row makes the result NULL. Pass true as the second argument to ignore NULLs. Without an ORDER BY in a window, the result depends on row order and is non-deterministic.",
+      "example_sql": "SELECT last_value(col) FROM VALUES (10), (5), (NULL) AS tab(col)",
+      "expected": "NULL",
+      "verified": true,
+      "in_part": true,
+      "actual": "NULL"
+    },
+    {
+      "function": "grouping",
+      "trap": "A grouping key that is itself NULL looks the same as a ROLLUP/CUBE subtotal row. Only `grouping(...)` = 1 marks the real subtotal; a group whose key is NULL still has `grouping(...)` = 0.",
+      "example_sql": "SELECT count(*) FROM (SELECT grouping(k) AS g FROM VALUES (1), (NULL) AS t(k) GROUP BY ROLLUP(k)) WHERE g = 0",
+      "expected": "2",
+      "verified": true,
+      "in_part": true,
+      "actual": "2"
+    },
+    {
+      "function": "regr_syy",
+      "trap": "The argument order is (y, x), with the dependent variable first. Any row where either y or x is NULL is dropped from the whole computation, so a NULL in x also removes that row's y value.",
+      "example_sql": "SELECT regr_syy(y, x) FROM VALUES (1, 2), (2, null), (2, 3), (2, 4) AS tab(y, x)",
+      "expected": "0.6666666666666666",
+      "verified": false,
+      "in_part": true,
+      "actual": "0.6666666666666667"
+    }
+  ]
+}

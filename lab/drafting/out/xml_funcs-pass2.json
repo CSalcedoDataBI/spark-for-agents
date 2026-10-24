@@ -1,0 +1,13 @@
+{
+  "notes": [
+    {
+      "function": "xpath_float",
+      "trap": "When the XPath matches a node whose text is not numeric, the result is NaN rather than NULL or an error. In Spark, NaN equals NaN and sorts above every other value, so it passes through `coalesce(...)` and IS NOT NULL checks unnoticed. The result type is FLOAT, so large or precise values lose precision compared with `xpath_double(...)`.",
+      "example_sql": "SELECT xpath_float('<a>b</a>', 'a')",
+      "expected": "NaN",
+      "verified": true,
+      "in_part": true,
+      "actual": "NaN"
+    }
+  ]
+}

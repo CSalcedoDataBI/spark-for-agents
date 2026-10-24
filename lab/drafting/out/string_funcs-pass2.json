@@ -1,0 +1,103 @@
+{
+  "notes": [
+    {
+      "function": "base64",
+      "trap": "A STRING argument is implicitly cast to BINARY using its UTF-8 bytes. Non-ASCII characters therefore encode to more than one byte each, and the result can differ from tools that use another charset.",
+      "example_sql": "SELECT base64('é')",
+      "expected": "w6k=",
+      "verified": true,
+      "in_part": true,
+      "actual": "w6k="
+    },
+    {
+      "function": "character_length",
+      "trap": "For STRING input it counts characters, not bytes, and trailing spaces are included. Use `octet_length(...)` for the byte count; for BINARY input it counts bytes.",
+      "example_sql": "SELECT character_length('héllo ')",
+      "expected": "6",
+      "verified": true,
+      "in_part": true,
+      "actual": "6"
+    },
+    {
+      "function": "left",
+      "trap": "A `len` of 0 or less returns an empty string, not NULL and not an error.",
+      "example_sql": "SELECT left('Spark', -1)",
+      "expected": "",
+      "verified": true,
+      "in_part": true,
+      "actual": ""
+    },
+    {
+      "function": "right",
+      "trap": "A `len` larger than the string length returns the whole string with no padding and no error. A `len` of 0 or less returns an empty string.",
+      "example_sql": "SELECT right('Spark', 10)",
+      "expected": "Spark",
+      "verified": true,
+      "in_part": true,
+      "actual": "Spark"
+    },
+    {
+      "function": "regexp_instr",
+      "trap": "It returns 0, not NULL, when there is no match, and positions are 1-based. The pattern is a Java regex inside a SQL string literal, so backslashes must be doubled.",
+      "example_sql": "SELECT regexp_instr('abc', 'x')",
+      "expected": "0",
+      "verified": true,
+      "in_part": true,
+      "actual": "0"
+    },
+    {
+      "function": "sentences",
+      "trap": "It returns an array of arrays (one inner array of words per sentence) and drops punctuation. It does not return a flat word list.",
+      "example_sql": "SELECT size(sentences('Hi there! Good morning.'))",
+      "expected": "2",
+      "verified": true,
+      "in_part": true,
+      "actual": "2"
+    },
+    {
+      "function": "startswith",
+      "trap": "The prefix is matched literally, so `%` and `_` are not wildcards as they are in `like(...)`. An empty prefix always returns true.",
+      "example_sql": "SELECT startswith('Spark', 'S%')",
+      "expected": "false",
+      "verified": true,
+      "in_part": true,
+      "actual": "false"
+    },
+    {
+      "function": "endswith",
+      "trap": "The suffix is matched literally, so LIKE wildcards are not interpreted. An empty suffix returns true.",
+      "example_sql": "SELECT endswith('Spark', '')",
+      "expected": "true",
+      "verified": true,
+      "in_part": true,
+      "actual": "true"
+    },
+    {
+      "function": "try_to_binary",
+      "trap": "When `fmt` is omitted, the default format is 'hex', not 'utf-8'. Ordinary text that is not valid hex therefore silently becomes NULL.",
+      "example_sql": "SELECT try_to_binary('zz') IS NULL",
+      "expected": "true",
+      "verified": true,
+      "in_part": true,
+      "actual": "true"
+    },
+    {
+      "function": "unbase64",
+      "trap": "The result is BINARY, not STRING. Wrap it in `cast(...)` to STRING (or use `decode(...)`) to get text.",
+      "example_sql": "SELECT typeof(unbase64('U3BhcmsgU1FM'))",
+      "expected": "binary",
+      "verified": true,
+      "in_part": true,
+      "actual": "binary"
+    },
+    {
+      "function": "upper",
+      "trap": "It applies Java's full Unicode case mapping, so some characters expand and the result can be longer than the input (for example 'ß' becomes 'SS').",
+      "example_sql": "SELECT upper('straße')",
+      "expected": "STRASSE",
+      "verified": true,
+      "in_part": true,
+      "actual": "STRASSE"
+    }
+  ]
+}

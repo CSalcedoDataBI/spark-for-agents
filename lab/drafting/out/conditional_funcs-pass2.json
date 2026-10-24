@@ -1,0 +1,13 @@
+{
+  "notes": [
+    {
+      "function": "ifnull",
+      "trap": "`ifnull(...)` only replaces SQL NULL. A floating-point NaN or an empty string passes through unchanged. Use `nanvl(...)` to replace NaN. Like `coalesce(...)`, it also coerces both arguments to a common type, so mixing a number with a string literal silently yields a string with ANSI off.",
+      "example_sql": "SELECT ifnull(CAST('NaN' AS DOUBLE), 0D)",
+      "expected": "NaN",
+      "verified": true,
+      "in_part": true,
+      "actual": "NaN"
+    }
+  ]
+}

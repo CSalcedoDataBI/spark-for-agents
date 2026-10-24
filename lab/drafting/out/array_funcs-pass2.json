@@ -1,0 +1,67 @@
+{
+  "notes": [
+    {
+      "function": "array_append",
+      "trap": "If the array argument is NULL the result is NULL, not a one-element array. A NULL element, by contrast, is appended as a real null entry.",
+      "example_sql": "SELECT array_append(CAST(NULL AS ARRAY<INT>), 2)",
+      "expected": "NULL",
+      "verified": true,
+      "in_part": true,
+      "actual": "NULL"
+    },
+    {
+      "function": "array_prepend",
+      "trap": "Only available from Spark 3.5.0. A NULL element is prepended as a real null entry and is not ignored, while a NULL array gives a NULL result.",
+      "example_sql": "SELECT CAST(array_prepend(array(1, 2), NULL) AS STRING)",
+      "expected": "[null, 1, 2]",
+      "verified": true,
+      "in_part": true,
+      "actual": "[null, 1, 2]"
+    },
+    {
+      "function": "array_compact",
+      "trap": "When every element is null the result is an empty array, not NULL. Only top-level nulls are removed; nulls inside nested arrays or structs stay.",
+      "example_sql": "SELECT CAST(array_compact(array(CAST(NULL AS INT), CAST(NULL AS INT))) AS STRING)",
+      "expected": "[]",
+      "verified": true,
+      "in_part": true,
+      "actual": "[]"
+    },
+    {
+      "function": "array_distinct",
+      "trap": "NULL elements are not dropped. All nulls collapse into a single null entry, and first-occurrence order is kept.",
+      "example_sql": "SELECT CAST(array_distinct(array(1, NULL, NULL, 1)) AS STRING)",
+      "expected": "[1, null]",
+      "verified": true,
+      "in_part": true,
+      "actual": "[1, null]"
+    },
+    {
+      "function": "array_intersect",
+      "trap": "NULL is treated as an ordinary comparable value, unlike SQL `=` semantics, so a null present in both arrays appears in the result. The output follows the order of the first array and is de-duplicated.",
+      "example_sql": "SELECT CAST(array_intersect(array(1, NULL), array(NULL, 2)) AS STRING)",
+      "expected": "[null]",
+      "verified": true,
+      "in_part": true,
+      "actual": "[null]"
+    },
+    {
+      "function": "array_union",
+      "trap": "This is a set union, not concatenation: duplicates are removed even when they occur only within one input array. Use `concat(...)` to keep duplicates.",
+      "example_sql": "SELECT CAST(array_union(array(1, 1), array(2)) AS STRING)",
+      "expected": "[1, 2]",
+      "verified": true,
+      "in_part": true,
+      "actual": "[1, 2]"
+    },
+    {
+      "function": "array_min",
+      "trap": "NaN counts as greater than every other double, so `array_min(...)` ignores it whenever a non-NaN value exists, while `array_max(...)` would return NaN. NULL elements are skipped rather than making the result NULL.",
+      "example_sql": "SELECT CAST(array_min(array(CAST('NaN' AS DOUBLE), 1.0D, NULL)) AS STRING)",
+      "expected": "1.0",
+      "verified": true,
+      "in_part": true,
+      "actual": "1.0"
+    }
+  ]
+}

@@ -1,0 +1,121 @@
+{
+  "notes": [
+    {
+      "function": "asin",
+      "trap": "Out-of-domain input does not return NULL or raise an error, even under ANSI mode. It returns NaN, which is not NULL, so `IS NULL` checks and `coalesce(...)` will not catch it.",
+      "example_sql": "SELECT asin(2)",
+      "expected": "NaN",
+      "verified": true,
+      "in_part": true,
+      "actual": "NaN"
+    },
+    {
+      "function": "acosh",
+      "trap": "Inputs below 1 silently return NaN rather than NULL or an error. NaN passes through `coalesce(...)` and IS NULL filters unchanged.",
+      "example_sql": "SELECT acosh(0)",
+      "expected": "NaN",
+      "verified": true,
+      "in_part": true,
+      "actual": "NaN"
+    },
+    {
+      "function": "atanh",
+      "trap": "At the domain boundary, atanh(1) returns Infinity rather than an error or NULL. Values beyond the boundary return NaN.",
+      "example_sql": "SELECT atanh(1)",
+      "expected": "Infinity",
+      "verified": true,
+      "in_part": true,
+      "actual": "Infinity"
+    },
+    {
+      "function": "cot",
+      "trap": "cot(0) is computed as 1/tan(0) in floating point. It returns Infinity, not a divide-by-zero error or NULL.",
+      "example_sql": "SELECT cot(0)",
+      "expected": "Infinity",
+      "verified": true,
+      "in_part": true,
+      "actual": "Infinity"
+    },
+    {
+      "function": "log10",
+      "trap": "Unlike `asin(...)` and similar functions that return NaN, Spark's logarithm functions return NULL for inputs <= 0. They do not return -Infinity, NaN, or an error.",
+      "example_sql": "SELECT log10(0)",
+      "expected": "NULL",
+      "verified": true,
+      "in_part": true,
+      "actual": "NULL"
+    },
+    {
+      "function": "log2",
+      "trap": "Non-positive input returns NULL rather than NaN or an error. This can silently turn rows into NULLs.",
+      "example_sql": "SELECT log2(-1)",
+      "expected": "NULL",
+      "verified": true,
+      "in_part": true,
+      "actual": "NULL"
+    },
+    {
+      "function": "ceiling",
+      "trap": "Without a scale argument, ceiling of a DOUBLE returns BIGINT, not DOUBLE. With a scale argument, the result is DECIMAL instead.",
+      "example_sql": "SELECT typeof(ceiling(2.5D))",
+      "expected": "bigint",
+      "verified": true,
+      "in_part": true,
+      "actual": "bigint"
+    },
+    {
+      "function": "least",
+      "trap": "NULL arguments are skipped, so the result is NULL only when every argument is NULL. Some engines (e.g. MySQL) instead return NULL if any argument is NULL.",
+      "example_sql": "SELECT least(5, NULL, 3)",
+      "expected": "3",
+      "verified": true,
+      "in_part": true,
+      "actual": "3"
+    },
+    {
+      "function": "random",
+      "trap": "A NULL seed is not an error and does not mean 'unseeded'. `random(null)` behaves exactly like `random(0)`, so it returns the same repeatable sequence.",
+      "example_sql": "SELECT random(0) = random(null)",
+      "expected": "true",
+      "verified": true,
+      "in_part": true,
+      "actual": "true"
+    },
+    {
+      "function": "signum",
+      "trap": "`signum(...)` always returns DOUBLE (-1.0, 0.0 or 1.0), even for integer or interval input. Code that expects an INT sign value gets a double instead.",
+      "example_sql": "SELECT typeof(signum(-5))",
+      "expected": "double",
+      "verified": true,
+      "in_part": true,
+      "actual": "double"
+    },
+    {
+      "function": "try_subtract",
+      "trap": "With ANSI mode off (the default), plain `-` on INT silently wraps around on overflow. `try_subtract(...)` returns NULL instead, so the two forms give different answers for the same inputs.",
+      "example_sql": "SELECT try_subtract(-2147483648, 1)",
+      "expected": "NULL",
+      "verified": true,
+      "in_part": true,
+      "actual": "NULL"
+    },
+    {
+      "function": "tan",
+      "trap": "`tan(...)` is computed in floating point on an approximate pi. At pi/2 it returns a huge finite number rather than NULL, Infinity or an error.",
+      "example_sql": "SELECT tan(pi()/2)",
+      "expected": "1.633123935319537E16",
+      "verified": true,
+      "in_part": true,
+      "actual": "1.633123935319537E16"
+    },
+    {
+      "function": "sinh",
+      "trap": "`sinh(...)` overflows to the DOUBLE value Infinity rather than returning NULL or raising an error, even when ANSI mode is on.",
+      "example_sql": "SELECT sinh(1000)",
+      "expected": "Infinity",
+      "verified": true,
+      "in_part": true,
+      "actual": "Infinity"
+    }
+  ]
+}
