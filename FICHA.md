@@ -43,7 +43,7 @@ Lo que no se toca sin un paso del plan que lo nombre:
 - **Formato de tag:** `vX.Y.Z`, con release-please (`release-please-config.json`).
 - **Experto:** `.claude/agents/experto.md`
 - **¿Plugin del directorio?:** todavía no. Se envía cuando salga de pre-release; desde entonces,
-  `stable` no se toca y publicar sigue R5.
+  `stable` no se toca y cada publicación sigue el protocolo de releases del directorio.
 - **Partes visibles que aprueba Cristóbal:** el README de cara al público y la salida de
   pre-release.
 

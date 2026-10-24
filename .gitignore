@@ -23,7 +23,7 @@ __pycache__/
 /HANDOFF.md
 /.handoffs/
 
-# Agent harness: machine-local notes. The experto agent is part of the repo (NORTE R6).
+# Agent harness: machine-local notes. The experto agent is part of the repo.
 /.claude/*
 !/.claude/agents/
 
