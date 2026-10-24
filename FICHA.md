@@ -1,7 +1,8 @@
 # Ficha — spark-for-agents
 
 > Ficha NORTE de esta herramienta. La lee su experto (`.claude/agents/experto.md`) en cada PR.
-> Guía: [NORTE.md](https://github.com/CSalcedoDataBI/docker-lab/blob/main/NORTE.md).
+> Se mantiene con las reglas internas del mantenedor: su norte es `FICHA.md` y el agente `experto`
+> fusiona contra ella.
 > Cambiarla exige una nueva aprobación de Cristóbal.
 
 ## Qué es
@@ -40,7 +41,7 @@ Lo que no se toca sin un paso del plan que lo nombre:
 - **Check de CI requerido:** `Validate` (ruleset `main protegida` de `main`)
 - **Suite de pruebas:** `python scripts/check_repo.py`
 - **Runner:** GitHub (repo público)
-- **Formato de tag:** `vX.Y.Z`. Falta `release-please-config.json`: queda pendiente del issue NORTE.
+- **Formato de tag:** `vX.Y.Z`, con release-please (`release-please-config.json`).
 - **Experto:** `.claude/agents/experto.md`
 - **¿Plugin del directorio?:** todavía no. Se envía cuando salga de pre-release; desde entonces,
   `stable` no se toca y publicar sigue R5.
